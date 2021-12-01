@@ -15,17 +15,18 @@
 """
 
 def generator(iterable, *args):
-	while True:
-		for i in iterable:
-			print(i)
+   for i in iterable:
+      yield i
 
 select = input('Введіть тип(tuple/list/str)')
 
 if select == "tuple":
-	iterable = tuple(input("Введіть об'єкти через кому: ").split(', '))
+   iterable = tuple(input("Введіть об'єкти через кому: ").split(', '))
 elif select == 'list':
-	iterable = list(input("Введіть об'єкти через кому: ").split(', '))
+   iterable = list(input("Введіть об'єкти через кому: ").split(', '))
 elif select == "str":
-	iterable = input("Введіть рядок: ")
+   iterable = input("Введіть рядок: ")
 
-generator(iterable)
+while True:
+   for i in [element for element in generator(iterable)]:
+      print (i)

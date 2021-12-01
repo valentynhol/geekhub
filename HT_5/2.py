@@ -20,14 +20,6 @@ class UpperLowerPassException(Exception):
 
 
 def validation(username, password, *args):
-    if len(username) < 3 or len(username) > 50:
-        print("Ім'я має бути не меншим від 3 і не більшим від 50 символів.")
-        raise NameLenException
-    elif len(password) < 8:
-        print("Пароль має бути не менше 8 символів.")
-        raise PassLenException
-    else:
-        print("Ім'я і пароль підходять")
     digit = False
     upper = False
     lower = False
@@ -47,13 +39,21 @@ def validation(username, password, *args):
             lower = True
             break
 
-    if not digit:
+    if len(username) < 3 or len(username) > 50:
+        print("Ім'я має бути не меншим від 3 і не більшим від 50 символів.")
+        raise NameLenException
+    elif len(password) < 8:
+        print("Пароль має бути не менше 8 символів.")
+        raise PassLenException
+    elif not digit:
         print("Пароль має бути хочаб з 1 цифрою.")
         raise DigitPassException
-
-    if not upper or not lower:
+    elif not upper or not lower:
         print("Пароль має бути хочаб з 1 великою і 1 малою буквами.")
         raise UpperLowerPassException
+    else:
+            print("Ім'я і пароль підходять")
+
 
 username = input("Введіть ім'я користувача: ")
 password = input("Введіть пароль: ")

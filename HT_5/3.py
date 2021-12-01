@@ -12,6 +12,18 @@
    P.S. Не забудьте використати блок try/except ;)
 """
 
+class NameLenException(Exception):
+    pass
+
+class PassLenException(Exception):
+    pass
+
+class DigitPassException(Exception):
+    pass
+
+class UpperLowerPassException(Exception):
+    pass
+
 def validation(username, password, *args):
     digit = False
     upper = False
@@ -33,15 +45,15 @@ def validation(username, password, *args):
             break
 
     if len(username) < 3 or len(username) > 50:
-        print("Status: Ім'я має бути не меншим від 3 і не більшим від 50 символів.")
+        raise NameLenException
     elif len(password) < 8:
-        print("Status: Пароль має бути не менше 8 символів.")
+        raise PassLenException
     elif not digit:
-        print("Status: Пароль має бути хоча б з 1 цифрою.")
+        raise DigitPassException
     elif not upper or not lower:
-        print("Status: Пароль має бути хоча б з 1 великою і 1 малою буквами.")
+        raise UpperLowerPassException
     else:
-        print("Status: Ім'я і пароль підходять")
+        print("Ім'я і пароль підходять")
 
 users = iter([["admin", "Admin123"],
         ["hehe", "justnoth1n'"],
@@ -53,14 +65,18 @@ users = iter([["admin", "Admin123"],
 
 pos = 0
 
-while True:
-    try:
-        user = next(users)
-    except StopIteration:
-        break
-
-    pos+=1
-    print(pos,'-----------------------------------------------------------------')
+for pos, user in enumerate(users):
+    print(pos+1,'-----------------------------------------------------------------')
     print('Name: ',user[0])
     print('Password: ',user[1])
-    validation(user[0], user[1])
+    try:
+        validation(user[0], user[1])
+    except NameLenException:
+        print("Status: Ім'я має бути не меншим від 3 і не більшим від 50 символів.")
+    except PassLenException:
+        print("Status: Пароль має бути не менше 8 символів.")
+    except DigitPassException:
+        print("Status: Пароль має бути хочаб з 1 цифрою.")
+    except UpperLowerPassException:
+        print("Status: Пароль має бути хочаб з 1 великою і 1 малою буквами.")
+        

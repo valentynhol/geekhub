@@ -7,23 +7,21 @@ class MyRangeError(Exception):
         pass
 
 def generator(start, stop, step):
-        range_list = []
         if step > 0:
                 while True:  
                         if start < stop:
-                                range_list.append(start)
+                                yield start
                         else:
                                 break
                         start += step
         elif step < 0:
                 while True:  
                         if start > stop:
-                                range_list.append(start)
+                                yield start
                         else:
                                 break
                         start += step
 
-        return range_list
 
 def my_range(*args):
         if len(args) == 1:
@@ -43,5 +41,4 @@ def my_range(*args):
         
         return generator(start, stop, step)
 
-
-print(my_range(100, 17, -2))
+print([num for num in my_range(100, 17, -2)])

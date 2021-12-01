@@ -26,7 +26,9 @@ username = input("Введіть ім'я користувача: ")
 password = input("Введіть пароль: ")
 silent = input('Silent(True/False/Пустий): ')
 
-if silent == 'True' or silent == 'False':
-    print(login(username, password, bool(silent)))
+if silent == 'True' :
+    print(login(username, password, True))
+elif silent == 'False':
+    print(login(username, password, False))
 else:
     print(login(username, password))
