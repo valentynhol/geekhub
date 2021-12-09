@@ -68,39 +68,61 @@ def check_bal(user):
 
 def add_cash(user):
     cash = float(input('Введіть суму, яку ви б хотіли нарахувати на рахунок: '))
+    if cash >= 0:
+        try:
+            with open(f'{user}_balance.data', 'x') as balance_data:
+                balance_data.write(str(cash))
+            print('Кошти успішно нараховано.')
+        except FileExistsError:
+            with open(f'{user}_balance.data', 'rt') as balance_data:
+                balance = float(balance_data.read())
 
-    try:
-        with open(f'{user}_balance.data', 'x') as balance_data:
-            balance_data.write(str(cash))
-        print('Кошти успішно нараховано.')
-    except FileExistsError:
-        with open(f'{user}_balance.data', 'rt') as balance_data:
-            balance = float(balance_data.read())
+            with open(f'{user}_balance.data', 'w') as balance_data:
+                balance_data.truncate(0)
+                balance_data.write(str(balance + cash))
+            print('Кошти успішно нараховано.')
 
-        with open(f'{user}_balance.data', 'w') as balance_data:
-            balance_data.truncate(0)
-            balance_data.write(str(balance + cash))
-        print('Кошти успішно нараховано.')
+            try:
+                transactions = open(f'{user}_transactions.data', 'x')
+                transactions.close()
+            except FileExistsError:
+                pass
+
+            with open(f'{user}_transactions.data', 'a') as transactions_data:
+                transactions_data.write(f'\nРахунок поповнено на {cash} грн.')
+    else:
+            print('Вкажіть справжню суму.')
 
 
 def get_cash(user):
     cash = float(input('Введіть суму, яку ви б хотіли зняти з рахунку: '))
+    if cash >= 0:
+        try:
+            with open(f'{user}_balance.data', 'rt') as balance_data:
+                balance = float(balance_data.read())
 
-    try:
-        with open(f'{user}_balance.data', 'rt') as balance_data:
-            balance = float(balance_data.read())
+            if balance >= cash:
+                with open(f'{user}_balance.data', 'w') as balance_data:
+                    balance_data.truncate(0)
+                    balance_data.write(str(balance - cash))
 
-        if balance >= cash:
-            with open(f'{user}_balance.data', 'w') as balance_data:
-                balance_data.truncate(0)
-                balance_data.write(str(balance - cash))
+                print('Кошти успішно знято.')
+            else:
+                print('Недостатньо коштів на рахунку.')
 
-            print('Кошти успішно знято.')
-        else:
-            print('Недостатньо коштів на рахунку.')
+            try:
+                transactions = open(f'{user}_transactions.data', 'x')
+                transactions.close()
+            except FileExistsError:
+                pass
 
-    except FileNotFoundError:
-        print('У вас немає коштів на рахунку.')
+            with open(f'{user}_transactions.data', 'a') as transactions_data:
+                transactions_data.write(f'\nЗ рахунку знято {cash} грн.')
+
+        except FileNotFoundError:
+            print('У вас немає коштів на рахунку.')
+    else:
+            print('Вкажіть справжню суму.')
 
 
 def start(user):
