@@ -58,7 +58,6 @@ def add_bank_cash():
         wallet.write(writestr)
 
 
-
 def change_wallet(wallet):
     if wallet == 1000:
         return [500, 2]
@@ -72,6 +71,8 @@ def change_wallet(wallet):
         return [20, 2, 10, 1]
     elif wallet == 20:
         return [10, 2]
+    else:
+        return
 
 
 def checkusers():
@@ -184,12 +185,6 @@ def get_cash(user):
     cash = float(input('Введіть суму, яку ви б хотіли зняти з рахунку: '))
 
     transaction_cash = cash
-    try:
-        if cash % wallet_list[min(wallet_list.keys())] == 0:
-            pass
-    except ZeroDivisionError:
-        print('Неможливо видати.')
-        exit()
 
     if cash >= 0:
         try:
@@ -238,7 +233,7 @@ def get_cash(user):
                             if wallet_number > 0:
                                 wallet_used[wallet] += wallet_number
                     else:
-                        if cash % wallet_list[min(wallet_list.keys())] == 0:
+                        if cash % min(wallet_list.keys()) == 0:
                             for wallet in wallet_list:
                                 wallet_number = int(cash // wallet)
                                 cash = cash % wallet
@@ -247,49 +242,59 @@ def get_cash(user):
                                     wallet_used[wallet] += wallet_number
 
                         else:
-                            print('Неможливо видати.')
+                            print('Неможливо видати.2')
 
-                able = True
+                start_used = list(wallet_used.values())
+
+                wallet_change_count = wallet_used
+                wallet_end = {1000: 0, 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0}
+
                 for i in wallet_used:
-                    if wallet_list[i] >= wallet_used[i]:
-                        wallet_list[i] -= wallet_used[i]
+                    if wallet_list[i] < wallet_used[i]:
+                        wallet_change_count[i] = wallet_used[i] - wallet_list[i]
+                        wallet_end[i] -= wallet_change_count[i]
 
-                    elif wallet_list[i] < wallet_used[i]:
-                        changing_wal = i
-                        for wallet_change_cycle in range(wallet_used[i]):
-                            changed = False
-                            while not changed:
-                                if changing_wal == 500 or changing_wal == 50:
-                                    if change_wallet(changing_wal)[1] < wallet_list[change_wallet(changing_wal)[0]]:
-                                        if change_wallet(changing_wal)[3] < wallet_list[change_wallet(changing_wal)[2]]:
-                                            changed = True
-                                            new_wallet = change_wallet(changing_wal)
-                                            wallet_used[new_wallet[0]] = new_wallet[1]
-                                            wallet_used[new_wallet[2]] = new_wallet[3]
-                                        else:
-                                            changing_wal = change_wallet(changing_wal)[2]
-                                    else:
-                                        changing_wal = change_wallet(changing_wal)[0]
-                                else:
-                                    if change_wallet(changing_wal)[1] < wallet_list[change_wallet(changing_wal)[0]]:
-                                        changed = True
-                                        new_wallet = change_wallet(changing_wal)
-                                        wallet_used[new_wallet[0]] += new_wallet[1]
-                                        wallet_used[i] -= 1
-                                    else:
-                                        changing_wal = change_wallet(changing_wal)[0]
+                        for wallet_change_cycle in range(wallet_change_count[i]):
+                            if i == 500 or i == 50:
+                                try:
+                                    new_wallet = change_wallet(i)
+                                    wallet_used[new_wallet[0]] += new_wallet[1]
+                                    wallet_used[new_wallet[2]] += new_wallet[3]
+                                    wallet_used[i] -= 1
+                                except TypeError:
+                                    print('Недостатньо грошей на балансі банкомата')
+                                    exit()
 
-                    else:
-                        able = False
-                        print('Неможливо видати.')
-                        break
+                            else:
+                                try:
+                                    new_wallet = change_wallet(i)
+                                    wallet_used[new_wallet[0]] += new_wallet[1]
+                                    wallet_used[i] -= 1
+                                except TypeError:
+                                    print('Недостатньо грошей на балансі банкомата')
+                                    exit()
 
-                if able:
-                    for element in wallet_used:
-                        if wallet_used[element] > 0:
-                            print(f'{element}: {int(wallet_used[element])}')
+                        for element1 in wallet_end:
+                            wallet_end[element1] += wallet_used[element1]
 
-                    wallet_list[i] -= wallet_used[i]
+                list_counter = 0
+                for element2 in wallet_end:
+                    wallet_end[element2] += start_used[list_counter]
+                    list_counter += 1
+
+                wallet_list_new = {}
+                with open('wallet.data', 'rt') as wallet:
+                    wallet_data = wallet.read().split(', ')
+                    for h in wallet_data:
+                        wallet_name, wallet_num = h.split(': ')
+                        wallet_list_new[int(wallet_name)] = int(wallet_num)
+
+                for element in wallet_list:
+                    if wallet_end[element] > 0:
+                        print(f'{element}: {int(wallet_list[element])}')
+
+                    wallet_list_new[i] -= wallet_end[i]
+
                 with open('wallet.data', 'w') as wallet_data:
                     wallet_data.truncate(0)
                     writestr = ''
@@ -297,12 +302,11 @@ def get_cash(user):
 
                     for wal_dat in wallet_list:
                         if end_count == 6:
-                            writestr += f'{wal_dat}: {wallet_list[wal_dat]}'
+                            writestr += f'{wal_dat}: {wallet_list_new[wal_dat] - wallet_list[wal_dat]}'
                         else:
-                            writestr += f'{wal_dat}: {wallet_list[wal_dat]}, '
+                            writestr += f'{wal_dat}: {wallet_list_new[wal_dat] - wallet_list[wal_dat]}, '
                         end_count += 1
                     wallet_data.write(writestr)
-
 
                 print('Кошти успішно знято.')
             else:
