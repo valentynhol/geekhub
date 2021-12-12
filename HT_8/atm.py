@@ -11,66 +11,55 @@
    - якщо гроші вносяться на рахунок - НЕ ТРЕБА їх розбивати і вносити в банкомат - не ускладнюйте собі життя, та й, наскільки я розумію, банкомати все, що в нього входить, відкладає в окрему касету.
 """
 
+import json
+
 
 def check_bank_bal():
     try:
-        with open('wallet.data', 'x') as wallet_data:
-            wallet_data.write('1000: 0, 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0')
+        with open('wallet.json', 'x') as wallet_data:
+            wallet = {1000: 0, 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0}
+            json.dump(wallet, wallet_data)
     except FileExistsError:
         pass
 
-    with open('wallet.data', 'rt') as wallet:
-        wallet_data = wallet.read().split(', ')
-        for i in wallet_data:
-            wallet_name, wallet_num = i.split(': ')
-            print(f'{wallet_name}: {wallet_num}')
+    with open('wallet.json', 'rt') as wallet_data:
+        wallet = json.load(wallet_data)
+        for key in wallet:
+            print(f'{key}: {wallet[key]}')
 
 
 def add_bank_cash():
     try:
-        with open('wallet.data', 'x') as wallet_data:
-            wallet_data.write('1000: 0, 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0')
+        with open('wallet.json', 'x') as wallet_data:
+            wallet = {1000: 0, 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0}
+            json.dump(wallet, wallet_data)
     except FileExistsError:
         pass
 
-    wallet_data_list = {}
-    with open('wallet.data', 'rt+') as wallet:
-        wallet_data = wallet.read().split(', ')
-        for i in wallet_data:
-            wallet_name, wallet_num = map(int, i.split(': '))
-            wallet_data_list[wallet_name] = wallet_num
-
-        add_wallet = int(input('Введіть розмір банкнот, які хочете додати на баланс(10/20/50/100/200/500/1000): '))
+    with open('wallet.json', 'r') as wallet_data:
+        wallet = json.load(wallet_data)
+        add_wallet = input('Введіть розмір банкнот, які хочете додати на баланс(10/20/50/100/200/500/1000): ')
         add_num = int(input('Введіть к-ть банкнот: '))
 
-        wallet_data_list[add_wallet] += add_num
-        end_count = 0
-        writestr = ''
+        wallet[add_wallet] += add_num
 
-    with open('wallet.data', 'w') as wallet:
-        for wal_dat in wallet_data_list:
-            if end_count == 6:
-                writestr += f'{wal_dat}: {wallet_data_list[wal_dat]}'
-            else:
-                writestr += f'{wal_dat}: {wallet_data_list[wal_dat]}, '
-            end_count += 1
-
-        wallet.write(writestr)
+    with open('wallet.json', 'w') as wallet_data:
+        json.dump(wallet, wallet_data)
 
 
 def change_wallet(wallet):
-    if wallet == 1000:
-        return [500, 2]
-    elif wallet == 500:
-        return [200, 2, 100, 1]
-    elif wallet == 200:
-        return [100, 2]
-    elif wallet == 100:
-        return [50, 2]
-    elif wallet == 50:
-        return [20, 2, 10, 1]
-    elif wallet == 20:
-        return [10, 2]
+    if wallet == '1000':
+        return ['500', 2]
+    elif wallet == '500':
+        return ['200', 2, '100', 1]
+    elif wallet == '200':
+        return ['100', 2]
+    elif wallet == '100':
+        return ['50', 2]
+    elif wallet == '50':
+        return ['20', 2, '10', 1]
+    elif wallet == '20':
+        return ['10', 2]
     else:
         return
 
@@ -161,8 +150,9 @@ def add_cash(user):
 
 def get_cash(user):
     try:
-        with open('wallet.data', 'x') as wallet_data:
-            wallet_data.write('1000: 0, 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0')
+        with open('wallet.json', 'x') as wallet_data:
+            wallet = {1000: 0, 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0}
+            json.dump(wallet, wallet_data)
             print('Вибачте, на даний момент, в банкоматі немає грошей.')
             exit()
     except FileExistsError:
@@ -170,19 +160,20 @@ def get_cash(user):
 
     wallet_list = {}
     bank_bal = 0
-    with open('wallet.data', 'rt') as wallet:
-        wallet_data = wallet.read().split(', ')
-        for i in wallet_data:
-            wallet_name, wallet_num = i.split(': ')
-            wallet_list[int(wallet_name)] = int(wallet_num)
+    with open('wallet.json', 'rt') as wallet_data:
+        wallet = json.load(wallet_data)
+        for key in wallet:
+            wallet_name = key
+            wallet_num = wallet[key]
+            wallet_list[wallet_name] = int(wallet_num)
             bank_bal += int(wallet_name) * int(wallet_num)
 
-    wallet_used = {1000: 0, 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0}
+    wallet_used = {'1000': 0, '500': 0, '200': 0, '100': 0, '50': 0, '20': 0, '10': 0}
     if wallet_list == wallet_used:
         print('Вибачте, на даний момент, в банкоматі немає грошей.')
         exit()
 
-    cash = float(input('Введіть суму, яку ви б хотіли зняти з рахунку: '))
+    cash = int(input('Введіть суму, яку ви б хотіли зняти з рахунку: '))
 
     transaction_cash = cash
 
@@ -197,57 +188,57 @@ def get_cash(user):
                     balance_data.write(str(balance - cash))
 
                 if cash % 10 == 0:
-                    if not wallet_list[10] == 0:
+                    if not wallet_list['10'] == 0:
                         for wallet in wallet_list:
-                            wallet_number = int(cash // wallet)
-                            cash = cash % wallet
+                            wallet_number = int(cash // int(wallet))
+                            cash = cash % int(wallet)
 
                             if wallet_number > 0:
                                 wallet_used[wallet] += wallet_number
 
-                    elif wallet_list[10] == 0 and not wallet_list[20] == 0:
+                    elif wallet_list['10'] == 0 and not wallet_list['20'] == 0:
                         if cash % 100 == 10 or cash % 100 == 30:
-                            wallet_used[50] += 1
-                            wallet_used[20] += (50 + cash % 100) // 20
+                            wallet_used['50'] += 1
+                            wallet_used['20'] += (50 + cash % 100) // 20
 
                         elif cash % 100 == 20 or cash % 100 == 40:
-                            wallet_used[100] += 1
-                            wallet_used[20] += cash % 100 // 20
+                            wallet_used['100'] += 1
+                            wallet_used['20'] += cash % 100 // 20
 
                         elif cash % 100 == 50 or cash % 100 == 70 or cash % 100 == 90:
-                            wallet_used[50] += 1
-                            wallet_used[20] += (cash % 100 - 50) // 20
+                            wallet_used['50'] += 1
+                            wallet_used['20'] += (cash % 100 - 50) // 20
 
                         elif cash % 100 == 60 or cash % 100 == 80:
-                            wallet_used[100] += 1
-                            wallet_used[20] += cash % 100 // 20
+                            wallet_used['100'] += 1
+                            wallet_used['20'] += cash % 100 // 20
 
                         if cash % 100 == 0:
                             pass
                         else:
                             cash = cash - (100 + cash % 100)
                         for wallet in wallet_list:
-                            wallet_number = int(cash // wallet)
-                            cash = cash % wallet
+                            wallet_number = int(cash // int(wallet))
+                            cash = cash % int(wallet)
 
                             if wallet_number > 0:
                                 wallet_used[wallet] += wallet_number
                     else:
-                        if cash % min(wallet_list.keys()) == 0:
+                        if cash % min(map(int, wallet_list.keys())) == 0:
                             for wallet in wallet_list:
-                                wallet_number = int(cash // wallet)
-                                cash = cash % wallet
+                                wallet_number = int(cash // int(wallet))
+                                cash = cash % int(wallet)
 
                                 if wallet_number > 0:
                                     wallet_used[wallet] += wallet_number
 
                         else:
-                            print('Неможливо видати.2')
+                            print('Неможливо видати.')
 
                 start_used = list(wallet_used.values())
 
                 wallet_change_count = wallet_used
-                wallet_end = {1000: 0, 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0}
+                wallet_end = {'1000': 0, '500': 0, '200': 0, '100': 0, '50': 0, '20': 0, '10': 0}
 
                 for i in wallet_used:
                     if wallet_list[i] < wallet_used[i]:
@@ -255,12 +246,13 @@ def get_cash(user):
                         wallet_end[i] -= wallet_change_count[i]
 
                         for wallet_change_cycle in range(wallet_change_count[i]):
-                            if i == 500 or i == 50:
+                            if i == '500' or i == '50':
                                 try:
                                     new_wallet = change_wallet(i)
                                     wallet_used[new_wallet[0]] += new_wallet[1]
                                     wallet_used[new_wallet[2]] += new_wallet[3]
                                     wallet_used[i] -= 1
+                                    print(wallet_used)
                                 except TypeError:
                                     print('Недостатньо грошей на балансі банкомата')
                                     exit()
@@ -283,30 +275,24 @@ def get_cash(user):
                     list_counter += 1
 
                 wallet_list_new = {}
-                with open('wallet.data', 'rt') as wallet:
-                    wallet_data = wallet.read().split(', ')
-                    for h in wallet_data:
-                        wallet_name, wallet_num = h.split(': ')
-                        wallet_list_new[int(wallet_name)] = int(wallet_num)
+                with open('wallet.json', 'rt') as wallet_data:
+                    wallet = json.load(wallet_data)
+                    for key in wallet:
+                        wallet_name = key
+                        wallet_num = wallet[key]
+                        wallet_list_new[wallet_name] = int(wallet_num)
 
-                for element in wallet_list:
+                for element in wallet_end:
                     if wallet_end[element] > 0:
-                        print(f'{element}: {int(wallet_list[element])}')
-
+                        print(f'{element}: {int(wallet_end[element])}')
                     wallet_list_new[i] -= wallet_end[i]
 
-                with open('wallet.data', 'w') as wallet_data:
-                    wallet_data.truncate(0)
-                    writestr = ''
-                    end_count = 0
-
+                with open('wallet.json', 'w') as wallet_data:
                     for wal_dat in wallet_list:
-                        if end_count == 6:
-                            writestr += f'{wal_dat}: {wallet_list_new[wal_dat] - wallet_list[wal_dat]}'
-                        else:
-                            writestr += f'{wal_dat}: {wallet_list_new[wal_dat] - wallet_list[wal_dat]}, '
-                        end_count += 1
-                    wallet_data.write(writestr)
+                        wallet[wal_dat] = wallet_list_new[wal_dat] - wallet_end[wal_dat]
+
+                    json.dump(wallet, wallet_data)
+                print(wallet)
 
                 print('Кошти успішно знято.')
             else:
