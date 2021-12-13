@@ -137,13 +137,14 @@ def add_cash(user):
             print('Кошти успішно нараховано.')
 
             try:
-                transactions = open(f'{user}_transactions.data', 'x')
+                transactions = open(f'{user}_transactions.json', 'x')
                 transactions.close()
             except FileExistsError:
                 pass
 
-            with open(f'{user}_transactions.data', 'a') as transactions_data:
-                transactions_data.write(f'\nРахунок поповнено на {cash} грн.')
+            with open(f'{user}_transactions.json', 'a') as transactions_data:
+                json.dump(f'+ {cash} UAH.', transactions_data)
+                transactions_data.write('\n')
     else:
         print('Вкажіть справжню суму.')
 
@@ -154,7 +155,8 @@ def get_cash(user):
             wallet = {1000: 0, 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0}
             json.dump(wallet, wallet_data)
             print('Вибачте, на даний момент, в банкоматі немає грошей.')
-            exit()
+            start(user, False)
+
     except FileExistsError:
         pass
 
@@ -171,22 +173,22 @@ def get_cash(user):
     wallet_used = {'1000': 0, '500': 0, '200': 0, '100': 0, '50': 0, '20': 0, '10': 0}
     if wallet_list == wallet_used:
         print('Вибачте, на даний момент, в банкоматі немає грошей.')
-        exit()
+        start(user, False)
 
     cash = int(input('Введіть суму, яку ви б хотіли зняти з рахунку: '))
 
+    with open(f'{user}_balance.data', 'r') as bal:
+        user_balance = bal.read()
+
+    withdrawed_cash = cash
     transaction_cash = cash
 
-    if cash >= 0:
+    if 0 <= cash <= float(user_balance):
         try:
             with open(f'{user}_balance.data', 'rt') as balance_data:
                 balance = float(balance_data.read())
 
             if balance >= cash or bank_bal >= cash:
-                with open(f'{user}_balance.data', 'w') as balance_data:
-                    balance_data.truncate(0)
-                    balance_data.write(str(balance - cash))
-
                 if cash % 10 == 0:
                     if not wallet_list['10'] == 0:
                         for wallet in wallet_list:
@@ -234,6 +236,7 @@ def get_cash(user):
 
                         else:
                             print('Неможливо видати.')
+                            start(user, False)
 
                 start_used = list(wallet_used.values())
 
@@ -252,10 +255,9 @@ def get_cash(user):
                                     wallet_used[new_wallet[0]] += new_wallet[1]
                                     wallet_used[new_wallet[2]] += new_wallet[3]
                                     wallet_used[i] -= 1
-                                    print(wallet_used)
                                 except TypeError:
                                     print('Недостатньо грошей на балансі банкомата')
-                                    exit()
+                                    start(user, False)
 
                             else:
                                 try:
@@ -264,7 +266,7 @@ def get_cash(user):
                                     wallet_used[i] -= 1
                                 except TypeError:
                                     print('Недостатньо грошей на балансі банкомата')
-                                    exit()
+                                    start(user, False)
 
                         for element1 in wallet_end:
                             wallet_end[element1] += wallet_used[element1]
@@ -273,7 +275,6 @@ def get_cash(user):
                 for element2 in wallet_end:
                     wallet_end[element2] += start_used[list_counter]
                     list_counter += 1
-
                 wallet_list_new = {}
                 with open('wallet.json', 'rt') as wallet_data:
                     wallet = json.load(wallet_data)
@@ -285,33 +286,39 @@ def get_cash(user):
                 for element in wallet_end:
                     if wallet_end[element] > 0:
                         print(f'{element}: {int(wallet_end[element])}')
-                    wallet_list_new[i] -= wallet_end[i]
 
                 with open('wallet.json', 'w') as wallet_data:
                     for wal_dat in wallet_list:
                         wallet[wal_dat] = wallet_list_new[wal_dat] - wallet_end[wal_dat]
 
                     json.dump(wallet, wallet_data)
-                print(wallet)
 
                 print('Кошти успішно знято.')
             else:
                 print('Недостатньо коштів на рахунку.')
+                start(user, False)
+
+            with open(f'{user}_balance.data', 'w') as balance_data:
+                balance_data.truncate(0)
+                balance_data.write(str(balance - withdrawed_cash))
 
             try:
-                transactions = open(f'{user}_transactions.data', 'x')
+                transactions = open(f'{user}_transactions.json', 'x')
                 transactions.close()
             except FileExistsError:
                 pass
 
-            with open(f'{user}_transactions.data', 'a') as transactions_data:
-                transactions_data.write(f'\nЗ рахунку знято {transaction_cash} грн.')
+            with open(f'{user}_transactions.json', 'a') as transactions_data:
+                json.dump(f'- {transaction_cash} UAH.', transactions_data)
+                transactions_data.write('\n')
 
         except FileNotFoundError:
             print('У вас немає коштів на рахунку.')
     else:
-        print('Вкажіть справжню суму.')
-
+        if not cash >= 0:
+            print('Вкажіть справжню суму.')
+        else:
+            print('Недостатньо коштів на рахунку.')
 
 def start(user, collector):
     if collector:
