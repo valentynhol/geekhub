@@ -292,6 +292,14 @@ def get_cash(user):
                         wallet_num = wallet[key]
                         wallet_list_new[wallet_name] = int(wallet_num)
 
+                for wal_dat in wallet_list:
+                    wallet[wal_dat] = wallet_list_new[wal_dat] - wallet_end[wal_dat]
+
+                for banknote in wallet:
+                    if wallet[banknote] < 0:
+                        print('Неможливо видати.')
+                        start(user, False)
+
                 for element in wallet_end:
                     if wallet_end[element] > 0:
                         print(f'{element}: {int(wallet_end[element])}')
