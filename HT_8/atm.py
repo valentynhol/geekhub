@@ -250,14 +250,23 @@ def get_cash(user):
 
                         for wallet_change_cycle in range(wallet_change_count[i]):
                             if i == '500' or i == '50':
-                                try:
-                                    new_wallet = change_wallet(i)
-                                    wallet_used[new_wallet[0]] += new_wallet[1]
-                                    wallet_used[new_wallet[2]] += new_wallet[3]
-                                    wallet_used[i] -= 1
-                                except TypeError:
-                                    print('Недостатньо грошей на балансі банкомата')
-                                    start(user, False)
+                                if wallet_change_count[i] % 2 == 0:
+                                    if i == '500':
+                                        wallet_used['200'] += int(500 * wallet_change_count[i] / 200)
+
+                                    else:
+                                        wallet_used['20'] += int(50 * wallet_change_count[i] / 20)
+                                    wallet_used[i] -= wallet_change_count[i]
+                                    break
+                                else:
+                                    try:
+                                        new_wallet = change_wallet(i)
+                                        wallet_used[new_wallet[0]] += new_wallet[1]
+                                        wallet_used[new_wallet[2]] += new_wallet[3]
+                                        wallet_used[i] -= 1
+                                    except TypeError:
+                                        print('Недостатньо грошей на балансі банкомата')
+                                        start(user, False)
 
                             else:
                                 try:
@@ -344,6 +353,7 @@ if not login_result:
         username, login_result, collector = login(users)
         if login_result:
             start(username, collector)
+            break
         else:
             login_fail += 1
     print('Спроби вичерпано, до побачення.')
