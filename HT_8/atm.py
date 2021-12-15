@@ -275,16 +275,11 @@ def get_cash(user):
                     print('Введіть число, яке ділиться на 10.')
                     start(user, False)
 
-                start_used = list(wallet_used.values())
-
-
-                wallet_change_count = wallet_used
-                wallet_end = {'1000': 0, '500': 0, '200': 0, '100': 0, '50': 0, '20': 0, '10': 0}
+                wallet_change_count = {'1000': 0, '500': 0, '200': 0, '100': 0, '50': 0, '20': 0, '10': 0}
 
                 for i in wallet_used:
                     if wallet_list[i] < wallet_used[i]:
                         wallet_change_count[i] = wallet_used[i] - wallet_list[i]
-                        wallet_end[i] -= wallet_change_count[i]
 
                         for wallet_change_cycle in range(wallet_change_count[i]):
                             if i == '500' or i == '50':
@@ -315,14 +310,8 @@ def get_cash(user):
                                     print('Недостатньо грошей на балансі банкомата')
                                     start(user, False)
 
-                        for element1 in wallet_end:
-                            wallet_end[element1] += wallet_used[element1]
-
-                list_counter = 0
-                for element2 in wallet_end:
-                    wallet_end[element2] += start_used[list_counter]
-                    list_counter += 1
                 wallet_list_new = {}
+
                 with open('wallet.json', 'rt') as wallet_data:
                     wallet = json.load(wallet_data)
                     for key in wallet:
@@ -331,20 +320,20 @@ def get_cash(user):
                         wallet_list_new[wallet_name] = int(wallet_num)
 
                 for wal_dat in wallet_list:
-                    wallet[wal_dat] = wallet_list_new[wal_dat] - wallet_end[wal_dat]
+                    wallet[wal_dat] = wallet_list_new[wal_dat] - wallet_used[wal_dat]
 
                 for banknote in wallet:
                     if wallet[banknote] < 0:
                         print('Не вистачає грошей в банкоматі.')
                         start(user, False)
 
-                for element in wallet_end:
-                    if wallet_end[element] > 0:
-                        print(f'{element}: {int(wallet_end[element])}')
+                for element in wallet_used:
+                    if wallet_used[element] > 0:
+                        print(f'{element}: {int(wallet_used[element])}')
 
                 with open('wallet.json', 'w') as wallet_data:
                     for wal_dat in wallet_list:
-                        wallet[wal_dat] = wallet_list_new[wal_dat] - wallet_end[wal_dat]
+                        wallet[wal_dat] = wallet_list_new[wal_dat] - wallet_used[wal_dat]
 
                     json.dump(wallet, wallet_data)
 
@@ -374,6 +363,7 @@ def get_cash(user):
             print('Вкажіть справжню суму.')
         else:
             print('Недостатньо коштів на рахунку.')
+
 
 def start(user, collector):
     if collector:
