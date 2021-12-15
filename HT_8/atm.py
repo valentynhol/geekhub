@@ -271,6 +271,9 @@ def get_cash(user):
                         else:
                             print('Неможливо видати.')
                             start(user, False)
+                else:
+                    print('Введіть число, яке ділиться на 10.')
+                    start(user, False)
 
                 start_used = list(wallet_used.values())
 
