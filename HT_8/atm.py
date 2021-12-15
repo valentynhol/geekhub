@@ -191,6 +191,31 @@ def get_cash(user):
             if balance >= cash or bank_bal >= cash:
                 if cash % 10 == 0:
                     if not wallet_list['10'] == 0:
+                        if cash % 100 == 10 or cash % 100 == 30:
+                            wallet_used['20'] += cash % 100 // 20
+                            wallet_used['10'] += 1
+
+                        elif cash % 100 == 20:
+                            wallet_used['20'] += cash % 100 // 20
+
+                        elif cash % 100 == 40:
+                            wallet_used['20'] += 2
+
+                        elif cash % 100 == 50 or cash % 100 == 70:
+                            wallet_used['50'] += 1
+                            wallet_used['20'] += (cash % 100 - 50) // 20
+
+                        elif cash % 100 == 90:
+                            wallet_used['50'] += 1
+                            wallet_used['20'] += 2
+
+                        elif cash % 100 == 60 or cash % 100 == 80:
+                            wallet_used['50'] += 1
+                            wallet_used['20'] += (cash % 100 - 60) // 20
+                            wallet_used['10'] += 1
+
+                        cash = cash - cash % 100
+
                         for wallet in wallet_list:
                             wallet_number = int(cash // int(wallet))
                             cash = cash % int(wallet)
@@ -199,32 +224,41 @@ def get_cash(user):
                                 wallet_used[wallet] += wallet_number
 
                     elif wallet_list['10'] == 0 and not wallet_list['20'] == 0:
+                        if cash == 10 or cash == 30:
+                            print('Не можливо видати')
+                            start(user, False)
+
                         if cash % 100 == 10 or cash % 100 == 30:
+                            wallet_used['100'] -= 1
                             wallet_used['50'] += 1
                             wallet_used['20'] += (50 + cash % 100) // 20
 
-                        elif cash % 100 == 20 or cash % 100 == 40:
-                            wallet_used['100'] += 1
+                        elif cash % 100 == 20:
                             wallet_used['20'] += cash % 100 // 20
 
-                        elif cash % 100 == 50 or cash % 100 == 70 or cash % 100 == 90:
+                        elif cash % 100 == 40:
+                            wallet_used['20'] += 2
+
+                        elif cash % 100 == 50 or cash % 100 == 70:
+                            wallet_used['50'] += 1
+                            wallet_used['20'] += (cash % 100 - 50) // 20
+
+                        elif cash % 100 == 90:
                             wallet_used['50'] += 1
                             wallet_used['20'] += (cash % 100 - 50) // 20
 
                         elif cash % 100 == 60 or cash % 100 == 80:
-                            wallet_used['100'] += 1
                             wallet_used['20'] += cash % 100 // 20
 
-                        if cash % 100 == 0:
-                            pass
-                        else:
-                            cash = cash - (100 + cash % 100)
+                        cash = cash - cash % 100
+
                         for wallet in wallet_list:
                             wallet_number = int(cash // int(wallet))
                             cash = cash % int(wallet)
 
                             if wallet_number > 0:
                                 wallet_used[wallet] += wallet_number
+
                     else:
                         if cash % min(map(int, wallet_list.keys())) == 0:
                             for wallet in wallet_list:
@@ -239,6 +273,7 @@ def get_cash(user):
                             start(user, False)
 
                 start_used = list(wallet_used.values())
+
 
                 wallet_change_count = wallet_used
                 wallet_end = {'1000': 0, '500': 0, '200': 0, '100': 0, '50': 0, '20': 0, '10': 0}
@@ -297,7 +332,7 @@ def get_cash(user):
 
                 for banknote in wallet:
                     if wallet[banknote] < 0:
-                        print('Неможливо видати.')
+                        print('Не вистачає грошей в банкоматі.')
                         start(user, False)
 
                 for element in wallet_end:
