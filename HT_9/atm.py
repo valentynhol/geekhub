@@ -350,6 +350,7 @@ def start(user, collector):
             if input('Продовжити? y/n \n\t') == 'n':
                 break
 
+
 users = checkusers()
 username, login_result, collector = login(users)
 
