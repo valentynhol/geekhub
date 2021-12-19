@@ -21,7 +21,7 @@ def converter(currency_input, currency_output, cash):
         except KeyError:
             pass
 
-    return f'\n\n{cash*sale_rate/purchase_rate} {currency_output}'
+    return f'\n\n{round(cash*sale_rate/purchase_rate, 2)} {currency_output}'
 
 
 print('\nAZN BYN CAD CHF CNY CZK DKK EUR GBP GEL HUF ILS JPY KZT MDL NOK PLN RUB SEK SGD TMT TRY UAH USD UZS')

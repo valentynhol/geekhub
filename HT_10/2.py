@@ -50,12 +50,12 @@ def change_watcher():
                         if exchange_currency['currency'] == currency:
                             if day_counter == 0:
                                 print('\nDate: ', date)
-                                print('NBU: ', exchange_currency['saleRateNB'], '--------')
+                                print('NBU: ', round(exchange_currency['saleRateNB'], 4), '--------')
                                 prev_exchange_rate = exchange_currency['saleRateNB']
                             else:
                                 print('\nDate: ', date)
-                                print('NBU: ', exchange_currency['saleRateNB'],
-                                      exchange_currency['saleRateNB'] - prev_exchange_rate)
+                                print('NBU: ', round(exchange_currency['saleRateNB'], 4),
+                                      round(exchange_currency['saleRateNB'] - prev_exchange_rate, 4))
                                 prev_exchange_rate = exchange_currency['saleRateNB']
                     except KeyError:
                         pass
