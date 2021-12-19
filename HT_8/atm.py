@@ -39,12 +39,18 @@ def add_bank_cash():
     with open('wallet.json', 'r') as wallet_data:
         wallet = json.load(wallet_data)
         add_wallet = input('Введіть розмір банкнот, які хочете додати на баланс(10/20/50/100/200/500/1000): ')
+
+        if add_wallet not in ['10', '20', '50', '100', '200', '500', '1000']:
+            print('Введіть дійсний розмір банкнот!')
+            exit()
+
         add_num = int(input('Введіть к-ть банкнот: '))
 
-        wallet[add_wallet] += add_num
+        if add_num < 0:
+            print('Введіть додатню к-ть!')
+            exit()
 
-    with open('wallet.json', 'w') as wallet_data:
-        json.dump(wallet, wallet_data)
+        wallet[add_wallet] += add_num
 
 
 def change_wallet(wallet):

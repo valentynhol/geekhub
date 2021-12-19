@@ -47,7 +47,18 @@ def add_bank_cash():
         wallet_list[wal_key[0]] = wal_key[1]
 
     add_wallet = input('Введіть розмір банкнот, які хочете додати на баланс(10/20/50/100/200/500/1000): ')
+
+    if add_wallet not in ['10', '20', '50', '100', '200', '500', '1000']:
+        print('Введіть дійсний розмір банкнот!')
+        database.close()
+        exit()
+
     add_num = int(input('Введіть к-ть банкнот: '))
+
+    if add_num < 0:
+        print('Введіть додатню к-ть!')
+        database.close()
+        exit()
 
     wallet_list[add_wallet] += add_num
     cur.execute('''UPDATE wallet SET wallet_num=? WHERE wallet=?''', (wallet_list[add_wallet], add_wallet))
