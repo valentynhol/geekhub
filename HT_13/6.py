@@ -12,17 +12,17 @@ class ObjCounter(object):
 
 """
 object1 = ObjCounter()
-print(ObjCounter.count)
+print(object1.count)
 
 object2 = ObjCounter()
-print(ObjCounter.count)
+print(object2.count)
 
 object3 = ObjCounter()
-print(ObjCounter.count)
+print(object3.count)
 
 object4 = ObjCounter()
-print(ObjCounter.count)
+print(object4.count)
 
 object5 = ObjCounter()
-print(ObjCounter.count)
+print(object5.count)
 """

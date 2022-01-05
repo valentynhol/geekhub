@@ -13,12 +13,14 @@ class Figure(object):
 
 class Oval(Figure):
     def __init__(self, a=1, b=1):
+        super().__init__()
         self.length = a
         self.width = b
 
 
 class Square(Figure):
     def __init__(self, a=1, b=1):
+        super().__init__()
         self.length = a
         self.width = b
 

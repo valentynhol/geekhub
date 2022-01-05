@@ -33,13 +33,15 @@ class Bookshelf(Library):
     floors = 0
     books = 0
 
-    def __init__(self, colour='White'):
+    def __init__(self, school, colour='White'):
+        super().__init__(school)
         Library.bookshelf_count += 1
         self.bookshelf_colour = colour
 
 
 class BookshelfFloor(Bookshelf):
     def __init__(self):
+        super().__init__()
         BookshelfFloor.floors += 1
 
     def check_books(self):
@@ -54,6 +56,7 @@ class BookshelfFloor(Bookshelf):
 
 class Book(Bookshelf):
     def __init__(self, title, pages, colour='White'):
+        super().__init__(colour)
         Bookshelf.books += 1
         self.book_title = title
         self.book_pages = pages

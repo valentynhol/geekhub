@@ -8,6 +8,9 @@
 class Figure(object):
     color = 'White'
 
+    def change_color(self, color):
+        self.color = color
+
 
 class Oval(Figure):
     def __init__(self, a=1, b=1):

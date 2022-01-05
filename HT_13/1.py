@@ -8,34 +8,61 @@
 
 
 class Calc(object):
+    """
+        A class that used to calculate simple expressions
+
+        ...
+
+        Attributes
+        ----------------------------------------------------------
+        last_result: int or float
+            Shows last expression result
+
+        Methods
+        ----------------------------------------------------------
+        addition(a, b):
+            Adds a and b and sets this result to last_result
+
+        substraction(a, b):
+            Substracts b from a and sets this result to last_result
+
+        multiplication(a, b):
+            Multiplies a by b and sets this result to last_result
+
+        division(a, b):
+            Divides a by b and sets this result to last_result
+
+        ----------------------------------------------------------
+    """
+
     last_result = None
 
     def addition(self, a, b):
         Calc.last_result = a + b
         return a + b
-    addition.__doc__ = 'Проста функція додавання.'
 
     def subtraction(self, a, b):
         Calc.last_result = a - b
         return a - b
-    subtraction.__doc__ = 'Проста функція віднімання.'
 
     def multiplication(self, a, b):
         Calc.last_result = a * b
         return a * b
-    multiplication.__doc__ = 'Проста функція множення.'
 
     def division(self, a, b):
-        Calc.last_result = a / b
-        return a / b
-    division.__doc__ = 'Проста функція ділення.'
+        if b == 0:
+            Calc.last_result = None
+            return 'Ділення на нуль неможливе'
+        else:
+            Calc.last_result = a / b
+            return a / b
 
 
 help(Calc)
 
 # calculator = Calc()
 
-# print(calculator.division(9, 3))
+# print(calculator.division(0, 1))
 # print(calculator.multiplication(9, 3))
 # print(calculator.addition(9, 3))
 # print(calculator.subtraction(9, 3))

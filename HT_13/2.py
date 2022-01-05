@@ -5,29 +5,33 @@
 
 
 class Person(object):
-    def __init__(self, name, surname, age, sex=None):
-        self.name = name
-        self.surname = surname
-        self.age = age
-        self.sex = sex
+    def __init__(self, **kwargs):
+        for kwarg in kwargs:
+            exec('self.' + kwarg + " = '" + str(kwargs[kwarg]) + "'")
+        self.all_information = kwargs
 
     def show_age(self):
-        return self.age
-    show_age.__doc__ = "Функція, яка повертає вік"
+        try:
+            return self.age
+        except AttributeError:
+            print(None)
 
     def print_name(self):
-        print(self.name, self.surname)
-    print_name.__doc__ = "Функція, яка прінтує ім'я і прізвище"
+        try:
+            print(self.name, self.surname)
+        except AttributeError:
+            return None
 
     def show_all_information(self):
-        return {'name': self.name, 'surname': self.surname, 'age': self.age, 'sex': self.sex}
-    show_all_information.__doc__ = "Функція, яка повертає повну інформацію"
+        return self.all_information
 
 
-help(Person)
+person1 = Person(profession='Firefighter')
+person2 = Person()
+person2.profession = 'Programmer'
 
-# person = Person('Вася', 'Хехехов', 21, 'Ч')
+print(person1.profession, person2.profession)
 
-# print(person.show_age())
-# person.print_name()
-# print(person.show_all_information())
+# print(person1.show_age())
+# person1.print_name()
+# print(person1.show_all_information())
