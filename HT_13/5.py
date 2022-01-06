@@ -6,7 +6,7 @@
 class Library(object):
     bookshelf_count = 0
 
-    def __init__(self, school, size=100):
+    def __init__(self, school=31, size=100):
         self.school = school
         self.library_size = size
 
@@ -33,15 +33,13 @@ class Bookshelf(Library):
     floors = 0
     books = 0
 
-    def __init__(self, school, colour='White'):
-        super().__init__(school)
+    def __init__(self, colour='White'):
         Library.bookshelf_count += 1
         self.bookshelf_colour = colour
 
 
 class BookshelfFloor(Bookshelf):
     def __init__(self):
-        super().__init__()
         BookshelfFloor.floors += 1
 
     def check_books(self):
@@ -56,7 +54,7 @@ class BookshelfFloor(Bookshelf):
 
 class Book(Bookshelf):
     def __init__(self, title, pages, colour='White'):
-        super().__init__(colour)
+        super().__init__()
         Bookshelf.books += 1
         self.book_title = title
         self.book_pages = pages
@@ -73,3 +71,17 @@ class Book(Bookshelf):
 
     def kick(self):
         print('Librarian: (╯ ° □ °) ╯ (┻━┻)')
+
+
+library = Library(int(input('В якій школі знаходиться бібліотека? №')), int(input('Яка її площа? ')))
+librarian = Librarian()
+librarian.name = input("Ім'я бібліотекаря ")
+librarian.sex = input('Стать ')
+librarian.age = input('Вік ')
+librarian.height = int(input('Ріст '))
+
+if input('Поставити полицю для книг? (y/n) ') == 'y':
+    bookshelf = Bookshelf()
+    bookshelf.floors = int(input('Скыльки буде в ній ярусів? '))
+    if input('Поставити в неї книгу? (y/n) ') == 'y':
+        book = Book(input('Назва книги '), input('К-ть сторінок '), input('Колір '))
