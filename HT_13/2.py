@@ -61,9 +61,6 @@ class Person(object):
             elif isinstance(arg, str) and self.name and not self.surname:
                 self.surname = arg
                 self.all_information['surname'] = arg
-            elif isinstance(arg, str) and self.name and self.surname and not self.profession:
-                self.profession = arg
-                self.all_information['profession'] = arg
 
     def show_age(self):
         return self.age
@@ -75,7 +72,8 @@ class Person(object):
         return self.all_information
 
 
-person1 = Person('Vasya', 'Petiov', 'Firefighter')
+person1 = Person('Vasya', 'Petiov')
+person1.profession = 'Firefighter'
 person2 = Person()
 person2.profession = 'Programmer'
 

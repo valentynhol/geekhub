@@ -4,11 +4,8 @@
 
 
 class Library(object):
-    bookshelf_count = 0
-
-    def __init__(self, school=31, size=100):
+    def __init__(self, school=None):
         self.school = school
-        self.library_size = size
 
 
 class Librarian(object):
@@ -30,17 +27,20 @@ class Librarian(object):
 
 
 class Bookshelf(Library):
-    floors = 0
-    books = 0
+    def __init__(self, colour='White',mode=0):
+        super().__init__()
+        if mode == 0:
+            try:
+                Library.bookshelf_count += 1
+            except AttributeError:
+                Library.bookshelf_count = 1
+            self.bookshelf_colour = colour
 
-    def __init__(self, colour='White'):
-        Library.bookshelf_count += 1
-        self.bookshelf_colour = colour
 
 
 class BookshelfFloor(Bookshelf):
     def __init__(self):
-        BookshelfFloor.floors += 1
+        super().__init__()
 
     def check_books(self):
         for i in range(4):
@@ -54,8 +54,7 @@ class BookshelfFloor(Bookshelf):
 
 class Book(Bookshelf):
     def __init__(self, title, pages, colour='White'):
-        super().__init__()
-        Bookshelf.books += 1
+        super().__init__(mode=1)
         self.book_title = title
         self.book_pages = pages
         self.book_colour = colour
@@ -73,7 +72,7 @@ class Book(Bookshelf):
         print('Librarian: (╯ ° □ °) ╯ (┻━┻)')
 
 
-library = Library(int(input('В якій школі знаходиться бібліотека? №')), int(input('Яка її площа? ')))
+library = Library(int(input('В якій школі знаходиться бібліотека? №')))
 librarian = Librarian()
 librarian.name = input("Ім'я бібліотекаря ")
 librarian.sex = input('Стать ')
@@ -82,6 +81,6 @@ librarian.height = int(input('Ріст '))
 
 if input('Поставити полицю для книг? (y/n) ') == 'y':
     bookshelf = Bookshelf()
-    bookshelf.floors = int(input('Скыльки буде в ній ярусів? '))
+    bookshelf.floors = int(input('Скільки буде в ній ярусів? '))
     if input('Поставити в неї книгу? (y/n) ') == 'y':
         book = Book(input('Назва книги '), input('К-ть сторінок '), input('Колір '))
