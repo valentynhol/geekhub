@@ -4,7 +4,51 @@
 import sqlite3
 
 
-class Admin(object):
+class User(object):
+    role = None
+
+    def start(self, user):
+        while True:
+            self.role.operation(user)
+            if input('Продовжити? y/n \n\t') == 'n':
+                break
+
+    def checkusers(self):
+        database = sqlite3.connect('atm.db')
+        cur = database.cursor()
+
+        cur.execute('''SELECT * FROM users''')
+        fetched = cur.fetchall()
+        database.close()
+        return fetched
+
+    def login(self, users):
+        print('------------------------Login------------------------')
+        username = input("Введіть ім'я користувача: ")
+        password = input("Введіть пароль: ")
+        for user in users:
+            if len(user) == 4 and user[1] == username and user[2] == password and user[3] == 1:
+                return username, True, True
+            elif user[1] == username and user[2] == password:
+                return username, True, False
+
+        return username, False, False
+
+
+class Admin(User):
+    def operation(self, *args):
+        mode = input('Виберіть режим:\n\t'
+                     '(1)Перевірити баланс банкомата\n\t'
+                     '(2)Поповнити баланс банкомата\n\t'
+                     '(0)Вихід\n\n')
+
+        if mode == '1':
+            admin_user.check_bank_bal()
+        elif mode == '2':
+            admin_user.add_bank_cash()
+        else:
+            exit()
+
     def check_bank_bal(self):
         database = sqlite3.connect('atm.db')
         cur = database.cursor()
@@ -18,7 +62,6 @@ class Admin(object):
 
         for key in wallet_list:
             print(f'{key}: {wallet_list[key]}')
-
 
     def add_bank_cash(self):
         database = sqlite3.connect('atm.db')
@@ -51,33 +94,23 @@ class Admin(object):
         database.close()
 
 
+class DefaultUser(User):
+    def operation(self, user):
+        mode = input('Виберіть режим:\n\t'
+                     '(1)Перевірити баланс\n\t'
+                     '(2)Нарахувати кошти\n\t'
+                     '(3)Зняти кошти\n\t'
+                     '(0)Вихід\n\n')
 
+        if mode == '1':
+            default_user.check_bal(user)
+        elif mode == '2':
+            default_user.add_cash(user)
+        elif mode == '3':
+            default_user.get_cash(user)
+        else:
+            exit()
 
-
-class Login(object):
-    def checkusers(self):
-        database = sqlite3.connect('atm.db')
-        cur = database.cursor()
-
-        cur.execute('''SELECT * FROM users''')
-        fetched = cur.fetchall()
-        database.close()
-        return fetched
-
-    def login(self, users):
-        print('------------------------Login------------------------')
-        username = input("Введіть ім'я користувача: ")
-        password = input("Введіть пароль: ")
-        for user in users:
-            if len(user) == 4 and user[1] == username and user[2] == password and user[3] == 1:
-                return username, True, True
-            elif user[1] == username and user[2] == password:
-                return username, True, False
-
-        return username, False, False
-
-
-class User(object):
     def change_wallet(self, wallet):
         if wallet == '1000':
             return ['500', 2]
@@ -101,7 +134,6 @@ class User(object):
         print(cur.fetchone()[0])
         database.close()
 
-
     def add_cash(self, user):
         cash = float(input('Введіть суму, яку ви б хотіли нарахувати на рахунок: '))
         if cash >= 0:
@@ -119,9 +151,8 @@ class User(object):
         else:
             print('Вкажіть справжню суму.')
 
-
     def get_cash(self, user):
-        #get wallet_list
+        # get wallet_list
         database = sqlite3.connect('atm.db')
         cur = database.cursor()
 
@@ -132,7 +163,7 @@ class User(object):
         for wal_key in fetched:
             wallet_list[wal_key[0]] = wal_key[1]
         database.close()
-        #--------------
+        # --------------
 
         bank_bal = 0
         for key in wallet_list:
@@ -144,7 +175,7 @@ class User(object):
         wallet_used = {'1000': 0, '500': 0, '200': 0, '100': 0, '50': 0, '20': 0, '10': 0}
         if wallet_list == wallet_used:
             print('Вибачте, на даний момент, в банкоматі немає грошей.')
-            starter.start(user, False)
+            default_user.start(user)
 
         cash = int(input('Введіть суму, яку ви б хотіли зняти з рахунку: '))
 
@@ -196,7 +227,7 @@ class User(object):
                     elif wallet_list['10'] == 0 and not wallet_list['20'] == 0:
                         if cash == 10 or cash == 30:
                             print('Не можливо видати')
-                            starter.start(user, False)
+                            default_user.start(user)
 
                         if cash % 100 == 10 or cash % 100 == 30:
                             wallet_used['100'] -= 1
@@ -240,10 +271,10 @@ class User(object):
 
                         else:
                             print('Неможливо видати.')
-                            starter.start(user, False)
+                            default_user.start(user)
                 else:
                     print('Введіть число, яке ділиться на 10.')
-                    starter.start(user, False)
+                    default_user.start(user)
 
                 wallet_change_count = {'1000': 0, '500': 0, '200': 0, '100': 0, '50': 0, '20': 0, '10': 0}
 
@@ -269,7 +300,7 @@ class User(object):
                                         wallet_used[i] -= 1
                                     except TypeError:
                                         print('Недостатньо грошей на балансі банкомата')
-                                        starter.start(user, False)
+                                        default_user.start(user)
 
                             else:
                                 try:
@@ -278,7 +309,7 @@ class User(object):
                                     wallet_used[i] -= 1
                                 except TypeError:
                                     print('Недостатньо грошей на балансі банкомата')
-                                    starter.start(user, False)
+                                    default_user.start(user)
                 wallet = {}
                 for wal_dat in wallet_list:
                     wallet[wal_dat] = wallet_list[wal_dat] - wallet_used[wal_dat]
@@ -286,7 +317,7 @@ class User(object):
                 for banknote in wallet:
                     if wallet[banknote] < 0:
                         print('Не вистачає грошей в банкоматі.')
-                        starter.start(user, False)
+                        default_user.start(user)
 
                 for element in wallet_used:
                     if wallet_used[element] > 0:
@@ -305,7 +336,7 @@ class User(object):
                 print('Кошти успішно знято.')
             else:
                 print('Недостатньо коштів на рахунку.')
-                starter.start(user, False)
+                default_user.start(user)
 
             database = sqlite3.connect('atm.db')
             cur = database.cursor()
@@ -321,72 +352,32 @@ class User(object):
                 print('Недостатньо коштів на рахунку.')
 
 
-class ModeSelector(object):
-    def operation(self, user):
-        mode = input('Виберіть режим:\n\t'
-                     '(1)Перевірити баланс\n\t'
-                     '(2)Нарахувати кошти\n\t'
-                     '(3)Зняти кошти\n\t'
-                     '(0)Вихід\n\n')
-
-        if mode == '1':
-            default_user.check_bal(user)
-        elif mode == '2':
-            default_user.add_cash(user)
-        elif mode == '3':
-            default_user.get_cash(user)
-        else:
-            exit()
-
-    def operation_collector(self):
-        mode = input('Виберіть режим:\n\t'
-                     '(1)Перевірити баланс банкомата\n\t'
-                     '(2)Поповнити баланс банкомата\n\t'
-                     '(0)Вихід\n\n')
-
-        if mode == '1':
-            admin_user.check_bank_bal()
-        elif mode == '2':
-            admin_user.add_bank_cash()
-        else:
-            exit()
-
-
-class Starter(object):
-    def start(self, user, collector):
-        if collector:
-            while True:
-                mode_selector.operation_collector()
-                if input('Продовжити? y/n \n\t') == 'n':
-                    break
-        else:
-            while True:
-                mode_selector.operation(user)
-                if input('Продовжити? y/n \n\t') == 'n':
-                    break
-
-
-logger = Login()
-starter = Starter()
-mode_selector = ModeSelector()
+unknown_role_user = User()
 admin_user = Admin()
-default_user = User()
+default_user = DefaultUser()
 
-users = logger.checkusers()
+users = unknown_role_user.checkusers()
+username, login_result, collector = unknown_role_user.login(users)
+if collector:
+    unknown_role_user.role = admin_user
+else:
+    unknown_role_user.role = default_user
 
-username, login_result, collector = logger.login(users)
+DefaultUser.role = default_user
+Admin.role = admin_user
 
 login_fail = 0
 
 if not login_result:
     while login_fail < 2:
         print("Неправильне ім'я/пароль. Спробуйте ще раз.")
-        username, login_result, collector = logger.login(users)
+        username, login_result, collector = unknown_role_user.login(users)
         if login_result:
-            starter.start(username, collector)
+            unknown_role_user.start(username)
+            unknown_role_user.collector = collector
             break
         else:
             login_fail += 1
     print('Спроби вичерпано, до побачення.')
 else:
-    starter.start(username, collector)
+    unknown_role_user.start(username)
