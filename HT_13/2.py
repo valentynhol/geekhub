@@ -43,7 +43,6 @@ class Person(object):
     name = None
     surname = None
     age = None
-    profession = None
     sex = None
     all_information = {}
 
