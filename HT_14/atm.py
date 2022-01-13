@@ -5,6 +5,15 @@ import sqlite3
 
 
 class DatabaseControl(object):
+    def check_users(self):
+        database = sqlite3.connect('atm.db')
+        cur = database.cursor()
+
+        cur.execute('''SELECT * FROM users''')
+        fetched = cur.fetchall()
+        database.close()
+        return fetched
+
     def get_wallet_list(self):
         database = sqlite3.connect('atm.db')
         cur = database.cursor()
@@ -18,6 +27,47 @@ class DatabaseControl(object):
 
         return wallet_list
 
+    def update_wallet(self, wallet_list, add_wallet, add_num):
+        database = sqlite3.connect('atm.db')
+        cur = database.cursor()
+
+        wallet_list[add_wallet] += add_num
+        cur.execute('''UPDATE wallet SET wallet_num=? WHERE wallet=?''', (wallet_list[add_wallet], add_wallet))
+        database.commit()
+        database.close()
+
+    def update_wallet_list(self, wallet):
+        database = sqlite3.connect('atm.db')
+        cur = database.cursor()
+        for wal in wallet:
+            cur.execute('''UPDATE wallet SET wallet_num=? WHERE wallet=?''', (wallet[wal], wal))
+        database.commit()
+        database.close()
+
+    def get_balance(self, user):
+        database = sqlite3.connect('atm.db')
+        cur = database.cursor()
+        cur.execute('''SELECT balance FROM balance WHERE username=?''', (user,))
+        fetched = cur.fetchone()[0]
+        database.close()
+
+        return fetched
+
+    def update_balance(self, wallet, user):
+        database = sqlite3.connect('atm.db')
+        cur = database.cursor()
+        cur.execute('''UPDATE balance SET balance=? WHERE username=?''', (wallet, user))
+        print('Кошти успішно нараховано.')
+        database.commit()
+        database.close()
+
+    def add_transaction(self, user, cash, sign):
+        database = sqlite3.connect('atm.db')
+        cur = database.cursor()
+        cur.execute('''INSERT INTO transactions VALUES (?, ?)''', (user, f'{sign} {cash} UAH.'))
+        database.commit()
+        database.close()
+
 
 class User(object):
     role = None
@@ -27,15 +77,6 @@ class User(object):
             self.role.operation(user)
             if input('Продовжити? y/n \n\t') == 'n':
                 break
-
-    def checkusers(self):
-        database = sqlite3.connect('atm.db')
-        cur = database.cursor()
-
-        cur.execute('''SELECT * FROM users''')
-        fetched = cur.fetchall()
-        database.close()
-        return fetched
 
     def login(self, users):
         print('------------------------Login------------------------')
@@ -85,13 +126,7 @@ class Admin(User):
             print('Введіть додатню к-ть!')
             exit()
 
-        database = sqlite3.connect('atm.db')
-        cur = database.cursor()
-
-        wallet_list[add_wallet] += add_num
-        cur.execute('''UPDATE wallet SET wallet_num=? WHERE wallet=?''', (wallet_list[add_wallet], add_wallet))
-        database.commit()
-        database.close()
+        database_controller.update_wallet(wallet_list, add_wallet, add_num)
 
 
 class DefaultUser(User):
@@ -128,25 +163,16 @@ class DefaultUser(User):
             return
 
     def check_bal(self, user):
-        database = sqlite3.connect('atm.db')
-        cur = database.cursor()
-        cur.execute('''SELECT balance FROM balance WHERE username=?''', (user,))
-        print(cur.fetchone()[0])
-        database.close()
+        print(database_controller.get_balance(user))
 
     def add_cash(self, user):
         cash = float(input('Введіть суму, яку ви б хотіли нарахувати на рахунок: '))
         if cash >= 0:
-            database = sqlite3.connect('atm.db')
-            cur = database.cursor()
-            cur.execute('''SELECT balance FROM balance WHERE username=?''', (user,))
-            wallet = cur.fetchone()[0] + cash
-            cur.execute('''UPDATE balance SET balance=? WHERE username=?''', (wallet, user))
-            print('Кошти успішно нараховано.')
 
-            cur.execute('''INSERT INTO transactions VALUES (?, ?)''', (user, f'+ {cash} UAH.'))
-            database.commit()
-            database.close()
+            wallet = database_controller.get_balance(user) + cash
+
+            database_controller.update_balance(wallet, user)
+            database_controller.add_transaction(user, cash, '+')
 
         else:
             print('Вкажіть справжню суму.')
@@ -285,11 +311,7 @@ class DefaultUser(User):
 
         cash = int(input('Введіть суму, яку ви б хотіли зняти з рахунку: '))
 
-        database = sqlite3.connect('atm.db')
-        cur = database.cursor()
-        cur.execute('''SELECT balance FROM balance WHERE username=?''', (user,))
-        balance = cur.fetchone()[0]
-        database.close()
+        balance = database_controller.get_balance(user)
 
         withdrawed_cash = cash
         transaction_cash = cash
@@ -320,26 +342,16 @@ class DefaultUser(User):
 
                 for wal_dat in wallet_list:
                     wallet[wal_dat] = wallet_list[wal_dat] - wallet_used[wal_dat]
-
-                database = sqlite3.connect('atm.db')
-                cur = database.cursor()
-                for wal in wallet:
-                    cur.execute('''UPDATE wallet SET wallet_num=? WHERE wallet=?''', (wallet[wal], wal))
-                database.commit()
-                database.close()
+                
+                database_controller.update_wallet_list(wallet)
 
                 print('Кошти успішно знято.')
             else:
                 print('Недостатньо коштів на рахунку.')
                 default_user.start(user)
 
-            database = sqlite3.connect('atm.db')
-            cur = database.cursor()
-            cur.execute('''UPDATE balance SET balance=? WHERE username=?''', (balance - withdrawed_cash, user))
-
-            cur.execute('''INSERT INTO transactions VALUES (?, ?)''', (user, f'- {transaction_cash} UAH.'))
-            database.commit()
-            database.close()
+            database_controller.update_balance(balance - withdrawed_cash, user)
+            database_controller.add_transaction(user, transaction_cash, '-')
         else:
             if not cash >= 0:
                 print('Вкажіть справжню суму.')
@@ -349,18 +361,19 @@ class DefaultUser(User):
 
 database_controller = DatabaseControl()
 unknown_role_user = User()
-admin_user = Admin()
-default_user = DefaultUser()
 
-users = unknown_role_user.checkusers()
+users = database_controller.check_users()
 username, login_result, collector = unknown_role_user.login(users)
 if collector:
+    admin_user = Admin()
     unknown_role_user.role = admin_user
+    Admin.role = admin_user
 else:
+    default_user = DefaultUser()
     unknown_role_user.role = default_user
+    DefaultUser.role = default_user
 
-DefaultUser.role = default_user
-Admin.role = admin_user
+
 
 login_fail = 0
 
