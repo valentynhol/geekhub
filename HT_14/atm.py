@@ -3,6 +3,25 @@
 """
 import sqlite3
 
+import requests
+import datetime
+
+
+class ExchangeRate(object):
+    def get(self):
+        date = datetime.date.today().strftime('%d.%m.20%y')
+        current_exchange_rate = requests.get(f'https://api.privatbank.ua/p24api/exchange_rates?json&date={date}').json()
+        self.__print_exchange_rate(current_exchange_rate)
+
+    def __print_exchange_rate(self, current_exchange_rate):
+        print('Валюта         Продаж           Купівля\n')
+        for exchange_rate in current_exchange_rate['exchangeRate']:
+            try:
+                print(exchange_rate['currency'], ' ' * 10, exchange_rate['saleRateNB'],
+                      ' ' * (15 - len(str(exchange_rate['saleRateNB']))), exchange_rate['purchaseRateNB'])
+            except KeyError:
+                pass
+
 
 class DatabaseControl(object):
     def check_users(self):
@@ -135,6 +154,7 @@ class DefaultUser(User):
                      '(1)Перевірити баланс\n\t'
                      '(2)Нарахувати кошти\n\t'
                      '(3)Зняти кошти\n\t'
+                     '(4)Перевірити курс валют\n\t'
                      '(0)Вихід\n\n')
 
         if mode == '1':
@@ -143,6 +163,9 @@ class DefaultUser(User):
             default_user.add_cash(user)
         elif mode == '3':
             default_user.get_cash(user)
+        elif mode == '4':
+            exchange_rate = ExchangeRate()
+            exchange_rate.get()
         else:
             exit()
 
