@@ -26,10 +26,10 @@ class NewsSpider(scrapy.Spider):
             print('Неправильна дата')
         self.date = input_date.year, input_date.month, input_date.day
         url = f'http://vikka.ua/{year}/{month}/{day}'
-        yield scrapy.Request(url, self.parse)
+        yield scrapy.Request(url, self.parse, errback=self.error)
 
     def verify_date(self, date):
-        if datetime.date(2009, 9, 21) <= date <= datetime.date.today():
+        if date <= datetime.date.today():
             return True
         else:
             return False
@@ -54,6 +54,17 @@ class NewsSpider(scrapy.Spider):
                 'tags': tags_csv,
                 'link': self.more_links[self.more_link_counter-1],
             })
+
+    def error(self, error):
+        print('\n\t\t_____________________________________________\n\t\t'
+              '|||||||||||||||||||||||||||||||||||||||||||||\n\t\t'
+              '---------------------------------------------\n\t\t'
+              '|||||||||||||||||||||||||||||||||||||||||||||\n\t\t'
+              '<<<<<=========| ПОСТІВ НЕМАЄ! |=========>>>>>\n\t\t'
+              '|||||||||||||||||||||||||||||||||||||||||||||\n\t\t'
+              '---------------------------------------------\n\t\t'
+              '|||||||||||||||||||||||||||||||||||||||||||||\n\t\t'
+              '_____________________________________________\n')
 
     def parse_more(self, response):
         """
