@@ -8,8 +8,7 @@ from bs4 import BeautifulSoup
 class NewsSpider(scrapy.Spider):
     name = 'news'
     date = None
-    more_links = []
-    more_link_counter = 0
+    more_links = {}
 
     def start_requests(self):
         # First page request
@@ -52,7 +51,7 @@ class NewsSpider(scrapy.Spider):
                 'title': soup.select_one('.post-title').text.strip(),
                 'text': soup.select_one('.entry-content').text.strip(),
                 'tags': tags_csv,
-                'link': self.more_links[self.more_link_counter-1],
+                'link': self.more_links[soup.select_one('.post-title').text],
             })
 
     def error(self, error):
@@ -70,7 +69,7 @@ class NewsSpider(scrapy.Spider):
         """
         This method scrapes and parses page with "more" page link
         """
-        self.more_link_counter += 1
+
         soup = BeautifulSoup(response.text, 'lxml')
 
         self.__csv_writer(soup)
@@ -87,7 +86,11 @@ class NewsSpider(scrapy.Spider):
 
         # Gets "more" links and making request to every page
         news_links = soup.select('.more-link-style')
+        news_titles = soup.select('.title-cat-post')
 
-        for news_link in news_links:
-            self.more_links.append(news_link['href'])
-            yield scrapy.Request(news_link['href'], self.parse_more)
+        for idx in range(len(news_links)):
+            self.more_links[news_titles[idx].text] = news_links[idx]['href']
+            yield scrapy.Request(news_links[idx]['href'], self.parse_more)
+
+        if soup.select_one('.next'):
+            yield scrapy.Request(soup.select_one('.next')['href'], self.parse)
