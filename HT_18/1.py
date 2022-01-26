@@ -26,8 +26,8 @@ class Process(object):
 
     @staticmethod
     def loading():
-        sys.stdout.write('\r\033[1;36m' + 'Loading' +
-                         '.' * (Process.loading_dots_counter % 3 + 1))
+        sys.stdout.write('\r\033[1;36m' + 'Loading\033[0m' +
+                         ' ' * (Process.loading_dots_counter % 10 + 1))
         sys.stdout.flush()
 
         Process.stories_counter += 1
@@ -35,8 +35,8 @@ class Process(object):
 
     @staticmethod
     def done():
-        print(f'\n\n\r\033[;42mDone!\nFound '
-              f'{Process.stories_counter} stories.')
+        sys.stdout.write(f'\r\033[0;42mDone! Found '
+              f'{Process.stories_counter} stories.\033[0m\n\n')
 
 
 class HackerNews(object):
@@ -60,17 +60,18 @@ class HackerNews(object):
         return field_dicts, field_names
 
     def get_category(self):
-        category = input('Категорія: ')
-        if category in ['askstories',
-                        'showstories',
-                        'newstories',
-                        'jobstories']:
-            return category
-        elif not category:
-            return 'newstories'
+        if len(sys.argv) >= 2:
+            category = sys.argv[1]
+            if category in ['askstories',
+                            'showstories',
+                            'newstories',
+                            'jobstories']:
+                return category
+            else:
+                print('Категорія не входить в список!')
+                exit()
         else:
-            print('Категорія не входить в список!')
-            exit()
+            return 'newstories'
 
     def get_by_id(self, stories_id):
         stories = requests.get(f'https://hacker-news.firebaseio.com'
