@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 try:
-    from HT_19.scraper.local_settings import *
+    from .local_settings import *
 except ImportError:
     BASE_DIR = Path(__file__).resolve().parent.parent
     SECRET_KEY = 'django-insecure-n3^nyz-h)vn0%u&-h=xo^_r)&1zd==mg%k%a18ixv+_!(u9-qz'
@@ -89,7 +89,7 @@ WSGI_APPLICATION = 'scraper.wsgi.application'
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'uk'
 
 TIME_ZONE = 'Etc/GMT-2'
 
