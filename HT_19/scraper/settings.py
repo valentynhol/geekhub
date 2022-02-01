@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 
 try:
@@ -19,7 +20,6 @@ except ImportError:
     BASE_DIR = Path(__file__).resolve().parent.parent
     SECRET_KEY = 'django-insecure-n3^nyz-h)vn0%u&-h=xo^_r)&1zd==mg%k%a18ixv+_!(u9-qz'
     DEBUG = False
-    ROOT_URLCONF = 'scraper.urls'
     ALLOWED_HOSTS = ['.localhost', '0.0.0.0', '127.0.0.1']
 
     DATABASES = {
@@ -101,7 +101,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = 'static/'
+ROOT_URLCONF = 'scraper.urls'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
