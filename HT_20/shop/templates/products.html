@@ -1,0 +1,27 @@
+{% extends 'base.html'%}
+
+{% block products %}
+    <div class="row row-cols-1 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 row-cols-xl-6 row-cols-xxl-7 g-3 text-center w-100">
+    {% if products %}
+        {% for product in products %}
+            <div class="col">
+                <div class="card shadow product" style="border: 1px solid grey; border-radius: 10px;">
+                    <img class="product-img" src='{{ product.url }}' class="card-img-top">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ product.title }}</h5>
+                        <p class="card-text text-end">
+                        <p class="card-text">{{ product.price }} UAH</p>
+                        <p class="card-text">{{ product.desc }}</p>
+                        <a href="../product/{{ product.id }}" class="stretched-link"></a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+
+    {% else %}
+        <div class="w-100">
+            <h1 class="no-products">No products yet :(</h1>
+        </div>
+    {% endif %}
+    </div>
+{% endblock %}

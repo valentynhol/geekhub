@@ -1,0 +1,16 @@
+{% extends 'base.html'%}
+
+{% block products %}
+    <a class="bi bi-chevron-left text-dark" style="width: 50px; font-size: 3rem;" href="../"></a>
+    <div class="w-100 text-center">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.title }}<br>
+            {{ form.description }}<br>
+            {{ form.price }}<br>
+            {{ form.image_url }}<br>
+            {{ form.category }}<br>
+            <button class="btn btn-outline-success" type="submit" value="Submit">Change!</button>
+        </form>
+    </div>
+{% endblock %}
