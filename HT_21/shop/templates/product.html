@@ -1,0 +1,75 @@
+{% extends 'base.html'%}
+
+
+{% block products %}
+    <div class="w-100 text-start"><a class="bi bi-chevron-left text-dark" style="width: 50px; font-size: 3rem;" href="../"></a><br></div>
+
+    <div class="row row-cols-1 row-cols-md-2">
+        <img src="{{ url }}" class="rounded shadow col-md-4 col-sm-12">
+        <div class="text-start col">
+            <h1 class="text-dark">{{ title }}</h1><h1 class="text-secondary">{{ price }} UAH</h1>
+            {% if superuser %}
+            <a href="/edit/{{ id }}" class="btn btn-warning">Edit</a>
+            {% endif %}
+            {% if username %}
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#add">Add to cart</button>
+            {% endif %}
+            <p class="">{{ description }}</p>
+        </div>
+    </div>
+
+{% endblock %}
+{% block modal %}
+        <div class="modal fade" id="add" tabindex="-1" aria-labelledby="add" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addLabel">Add to cart</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <h4 class="text-secondary">Select count: </h4>
+                        <input type="range" value="1" class="form-range product-count" min="1" max="10" step="1" name="count" oninput="this.nextElementSibling.value = this.value">
+                        <output class="text-secondary">1</output>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button role="button" class="btn btn-success add-to-cart-btn" data-bs-dismiss="modal" id="{{ id }}">Add!</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+{% endblock %}
+{% block script %}
+        {% csrf_token %}
+        <script>
+            document.querySelector('.add-to-cart-btn').onclick = function(){
+                var count = document.querySelector('.product-count').value;
+                var token = document.querySelector('[name="csrfmiddlewaretoken"]').value;
+
+                var request = new XMLHttpRequest();
+                request.open("POST", "");
+                request.setRequestHeader('X-CSRFToken', token);
+                request.responseType = 'json';
+
+                request.onreadystatechange = function() {
+                    if (request.readyState == 4) {
+                        var alert = document.getElementById('alert');
+                        if ('success' === Object.keys(request.response)[0] === true) {
+                            alert.setAttribute('class', 'alert alert-success');
+                            alert.innerHTML = '<i class="bi bi-check-circle-fill" role="img"></i>' + request.response['success'];
+                        } else {
+                            alert.innerHTML = '<i class="bi bi-exclamation-triangle-fill" role="img"></i>' + request.response['error'];
+                            alert.setAttribute('class', 'alert alert-danger');
+                        }
+
+                    }
+                };
+
+                request.send(count);
+            };
+        </script>
+{% endblock %}
+{% block alert %}
+<div id="alert"></div>
+{% endblock %}
