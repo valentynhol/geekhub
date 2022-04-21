@@ -1,0 +1,52 @@
+{% extends 'base.html'%}
+
+{% block page_title %}Картки та рахунки{% endblock %}
+
+{% block page %}
+    {% load static %}
+<h1 class="border-bottom text-dark">Банківські картки <a href="#"><i class="bi bi-plus-circle-fill text-success text-end"></i></a></h1>
+    <div class="row row-cols-1 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 row-cols-xl-6 row-cols-xxl-7 g-3 text-center w-100">
+    {% if products %}
+        {% for card in cards %}
+            <div class="card col">
+                <img class="card-color" src="{% static 'images/cards/color/{{ card.color }}.svg' %}">
+                <img class="card-payment-system" src="{% static 'images/cards/payment_system/{{ card.payment_system }}.png' %}">
+                <p class="card-num">●●●● ●●●● ●●●● {{ card.last_numbers }}</p>
+                <a class="stretched-link" href="../card/{{ card.id }}"></a>
+            </div>
+        {% endfor %}
+            <div class="col">
+                <a href="#"><i class="bi-plus-circle-fill" style="font-size: 20%"></i></a>
+            </div>
+
+    {% else %}
+        <div class="w-100">
+            <h1 class="no-cards">Схоже, що у вас немає банківських карт</h1>
+            <img class="no-cards-img" src="{% static 'images/smiley.png' %}">
+            <div class="row">
+                <div class="card">
+                    <img class="card-color" src="{% static 'images/cards/color/yellow.svg' %}">
+                    <img class="card-payment-system" src="{% static 'images/cards/payment_system/mastercard.png' %}">
+                    <p class="card-num">●●●● ●●●● ●●●● 1482</p>
+                    <a class="stretched-link" href="#"></a>
+                </div>
+                <div class="card">
+                    <img class="card-color" src="{% static 'images/cards/color/blue.svg' %}">
+                    <img class="card-payment-system" src="{% static 'images/cards/payment_system/visa.png' %}">
+                    <p class="card-num">●●●● ●●●● ●●●● 1482</p>
+                    <a class="stretched-link" href="#"></a>
+                </div>
+                <div class="card">
+                    <img class="card-color" src="{% static 'images/cards/color/grey.svg' %}">
+                    <img class="card-payment-system" src="{% static 'images/cards/payment_system/mastercard.png' %}">
+                    <p class="card-num">●●●● ●●●● ●●●● 1482</p>
+                    <a class="stretched-link" href="#"></a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    </div>
+
+    <h1 class="border-bottom text-dark">Банківські рахунки</h1>
+
+{% endblock %}
