@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block page_title %}Створення картки{% endblock %}
+{% block page_title %}Створення рахунку{% endblock %}
 
 {% block style %}
             [name=title]:hover{
@@ -17,21 +17,25 @@
                 border: 1px solid grey;
                 border-radius: 7px;
                 height: 40px;
-                min-width: 100px;
-                max-width: 300px;
+                width: 100%;
             }
 
             .bi{
                 padding: 4px;
             }
+
+            form{
+                min-width: 150px;
+                max-width: 300px;
+                width: 25%;
+            }
 {% endblock %}
 
 {% block page %}
-
-<form action="" method="post">
-    <h1 class="text-dark" style="display: flex">Створення банківського рахунку:</h1>
+<h1>Створення банківського рахунку:</h1>
+<form action="" method="post" class="mx-auto">
     {% csrf_token %}
     {{ form.title }}<br>
-    <input type="submit" value="Створити!" style="height: 40px" class="btn btn-dark mt-3 shadow">
+    <input type="submit" value="Створити" style="height: 40px; float: right" class="btn btn-dark shadow">
 </form>
 {% endblock %}

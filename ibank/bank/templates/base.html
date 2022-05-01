@@ -44,7 +44,7 @@
                }
 
                #dropdownUser {
-                   left: 1rem !important;
+                   left: 1.5rem !important;
                }
             }
 
@@ -67,8 +67,13 @@
                 height: 100vh;
             }
 
-            .nav-link:hover{
+            .nav-link:hover, #dropdownUser:hover{
                 text-shadow: 0 0 2rem #000;
+            }
+
+            .dropdown-item:active{
+                background-color: #dfdfdf;
+                color: #212529;
             }
 
             .toolsbar{
@@ -80,17 +85,17 @@
                 min-height: 4rem;
                 bottom: 0;
                 position: fixed;
-                left: 0.5rem;
+                left: 1rem;
             }
             {% block style %}
             {% endblock %}
         </style>
     </head>
-    <body>
+    <body class="text-dark">
         <div class="row" style="width: 100%">
             <div class="navbar-col">
                 <div class="navbar-expand-md d-flex flex-column flex-shrink-0 navbar-light bg-light fixed-top toolsbar" style="height: 100vh">
-                    <div class="d-block link-dark text-decoration-none row px-auto">
+                    <div class="d-block link-dark text-decoration-none row px-auto pt-1">
                         <img class="logo" src="{% static 'images/logo/logo.svg' %}" alt="logo">
                         <p class="text-center bank-title" style="font-size: 0.75rem"><b>iBank</b></p>
                     </div>
@@ -99,30 +104,30 @@
                     </button>
                     <div class="collapse navbar-collapse collapse-horizontal mb-auto bg-light border-start" id="navbarMenu">
                         <ul class="nav mb-auto text-start nav-items py-auto list-group mx-auto">
-                            <li class="nav-link py-3 text-dark" style="font-size: 1rem"><a href="/" class="text-decoration-none row row-cols-2" data-bs-toggle="tooltip" data-bs-placement="right" title="Домашня сторінка"><i class="bi bi-house-fill text-dark col w-auto my-auto px-0" role="img"></i><p class="col text-dark my-auto nav-item-text">Домашня сторінка</p></a></li>
-                            <li class="nav-link py-3 text-dark" style="font-size: 1rem"><a href="#" class="text-decoration-none row row-cols-2" data-bs-toggle="tooltip" data-bs-placement="right" title="Історія"><i class="bi bi-clock-history text-dark col w-auto my-auto px-0" role="img"></i><p class="col text-dark my-auto nav-item-text">Історія</p></a></li>
-                            <li class="nav-link py-3 text-dark" style="font-size: 1rem"><a href="#" class="text-decoration-none row row-cols-2" data-bs-toggle="tooltip" data-bs-placement="right" title="Налаштування"><i class="bi bi-gear-fill text-dark col w-auto my-auto px-0" role="img"></i><p class="col text-dark my-auto pe-4 nav-item-text">Налаштування</p></a></li>
+                            <li class="nav-link py-3" style="font-size: 1rem"><a href="/" class="text-decoration-none row row-cols-2" data-bs-toggle="tooltip" data-bs-placement="right" title="Домашня сторінка"><i class="bi bi-house-fill text-dark col w-auto my-auto px-0" role="img"></i><p class="col text-dark my-auto nav-item-text">Домашня сторінка</p></a></li>
+                            <li class="nav-link py-3" style="font-size: 1rem"><a href="#" class="text-decoration-none row row-cols-2" data-bs-toggle="tooltip" data-bs-placement="right" title="Історія"><i class="bi bi-clock-history text-dark col w-auto my-auto px-0" role="img"></i><p class="col text-dark my-auto nav-item-text">Історія</p></a></li>
+                            <li class="nav-link py-3" style="font-size: 1rem"><a href="#" class="text-decoration-none row row-cols-2" data-bs-toggle="tooltip" data-bs-placement="right" title="Налаштування"><i class="bi bi-gear-fill text-dark col w-auto my-auto px-0" role="img"></i><p class="col text-dark my-auto pe-4 nav-item-text">Налаштування</p></a></li>
                         </ul>
                     </div>
-                    <div class="border-top text-center">
-                        <a role="button" class="d-flex align-items-center justify-content-center p-auto link-dark text-decoration-none dropdown-toggle" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div>
+                        <a role="button" class="d-flex align-items-center justify-content-center p-auto link-dark text-decoration-none" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-person-circle"></i>
                         </a>
                         <ul class="dropdown-menu text-small shadow p-2" aria-labelledby="dropdownUser" style="max-width: 100vw">
                             <li class="disabled">{{ email }}</li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="#">Налаштування</a></li>
-                            <li><a class="dropdown-item text-danger" href="/logout">Вийти з акаунту</a></li>
+                            <li><a class="dropdown-item text-danger" data-bs-target="#logout" data-bs-toggle="modal">Вийти з акаунту</a></li>
                         </ul>
                     </div>
                 </div>
             </div>
             <div class="main" style="padding-left: 4rem">
                 {% block alert %}
-                    {% if request.session.error %}
-                        <div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill" role="img"></i>{{ request.session.error }}</div>
-                    {% elif request.session.success %}
-                        <div class="alert alert-success"><i class="bi bi-check-circle-fill" role="img"></i>{{ request.session.success }}</div>
+                    {% if error %}
+                        <div class="alert alert-danger"><i class="bi-exclamation-triangle-fill p-2" role="img"></i>{{ error }}</div>
+                    {% elif success %}
+                        <div class="alert alert-success"><i class="bi-check-circle-fill p-2" role="img"></i>{{ success }}</div>
                     {% endif %}
                 {% endblock %}
 
@@ -141,7 +146,7 @@
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Скасувати</button>
-                                <a type="button" class="btn btn-danger" href="../logout">Вийти!</a>
+                                <a type="button" class="btn btn-danger" href="../logout">Вийти</a>
                             </div>
                         </div>
                     </div>

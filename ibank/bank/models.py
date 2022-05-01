@@ -48,6 +48,10 @@ class Card(models.Model):
     def __str__(self):
         return self.card_number
 
+    def beautiful_number(self):
+        num = self.card_number
+        return num[0:4] + ' ' + num[4:8] + ' ' + num[8:12] + ' ' + num[12:16]
+
     class Meta:
         verbose_name = _('картка')
         verbose_name_plural = _('картки')
@@ -65,6 +69,11 @@ class BankAccount(models.Model):
 
     def __str__(self):
         return self.iban
+
+    def beautiful_iban(self):
+        iban = self.iban
+        return iban[0:4] + ' ' + iban[4:8] + ' ' + iban[8:12] + ' ' + iban[12:16] + ' ' + iban[16:20] + ' ' \
+                         + iban[20:24] + ' ' + iban[24:28] + ' ' + iban[28]
 
     class Meta:
         verbose_name = _('банківський рахунок')

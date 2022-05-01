@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 
+{% block page_title %}Картка: {{ card.title }}{% endblock%}
+
 {% block style %}
         .card {
             position: relative;
@@ -42,12 +44,12 @@
             <img class="card-payment-system" src="{% static 'images/cards/payment_system/'|add:card.payment_system|add:'.png' %}">
             <p class="card-num"> {{ card.number }}</p>
         </div>
-        <div class="col text-dark">
+        <div class="col">
             <h1>{{ card.title }}</h1>
             <p>Держатель картки: {{ card.cardholder }}</p>
             <p>CVV/CVC: {{ card.cvv }}</p>
             <p>Термін дії: {{ card.expiry_date }}</p>
-            <p>Рахунок: {{ card.bank_account }}</p>
+            <p>Рахунок: {{ card.ba_title }} ({{ card.bank_account }})</p>
         </div>
     </div>
 {% endblock %}

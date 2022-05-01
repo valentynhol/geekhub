@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Рахунок: {{ ba.title }}{% endblock%}
+
+{% block page %}{% load static %}
+    <h1>{{ ba.title }}</h1>
+    <p>Власник рахунку: {{ ba.full_name }}</p>
+    <p>IBAN: {{ ba.iban }}</p>
+    <p>Валюта: {{ ba.currency }}</p>
+    <p>Баланс: {{ ba.balance }}</p>
+{% endblock %}

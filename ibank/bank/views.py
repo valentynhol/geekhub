@@ -82,13 +82,8 @@ def user_signup(request):
         del request.session['error']
     except KeyError:
         error = None
-    try:
-        success = request.session['success']
-        del request.session['success']
-    except KeyError:
-        success = None
 
-    context = {'form': form, 'error': error, 'success': success}
+    context = {'form': form, 'error': error}
     return render(request, 'signup.html', context)
 
 
@@ -109,13 +104,8 @@ def user_login(request):
         del request.session['error']
     except KeyError:
         error = None
-    try:
-        success = request.session['success']
-        del request.session['success']
-    except KeyError:
-        success = None
 
-    context = {'form': form, 'error': error, 'success': success}
+    context = {'form': form, 'error': error}
     return render(request, 'login.html', context)
 
 
@@ -134,11 +124,11 @@ def home(request):
 
     cards = []
     for card in raw_cards:
-        cards.append({'number': card.card_number, 'color': card.color,
+        cards.append({'number': card.beautiful_number(), 'color': card.color,
                       'payment_system': card.payment_system, 'id': card.id})
     bas = []
     for ba in raw_bas:
-        bas.append({'title': ba.title, 'currency': ba.currency, 'iban': ba.iban, 'id': ba.id, 'balance': ba.balance})
+        bas.append({'title': ba.title, 'currency': ba.currency, 'iban': ba.beautiful_iban(), 'id': ba.id, 'balance': ba.balance})
 
     try:
         error = request.session['error']
@@ -229,25 +219,55 @@ def create_ba(request):
         return render(request, 'add_bank_account.html', context)
 
 
+@login_required(redirect_field_name=None)
 def card_page(request, card_id):
     user = request.user
     card = Card.objects.get(id=card_id)
-    card_ba = BankAccount.objects.get(id=card.bank_account)
+    if user.email == card.cardholder_email:
+        card_ba = BankAccount.objects.get(id=card.bank_account)
 
-    try:
-        error = request.session['error']
-        del request.session['error']
-    except KeyError:
-        error = None
-    try:
-        success = request.session['success']
-        del request.session['success']
-    except KeyError:
-        success = None
+        try:
+            error = request.session['error']
+            del request.session['error']
+        except KeyError:
+            error = None
+        try:
+            success = request.session['success']
+            del request.session['success']
+        except KeyError:
+            success = None
 
-    context = {'email': user, 'error': error, 'success': success,
-               'card': {'number': card.card_number, 'title': card.title, 'bank_account': card_ba.iban,
-                        'ba_title': card_ba.title, 'color': card.color, 'payment_system': card.payment_system,
-                        'cardholder': f'{card.cardholder_surname} {card.cardholder_name}', 'cvv': card.cvv,
-                        'expiry_date': card.expiry_date}}
-    return render(request, 'card_page.html', context)
+        context = {'email': user, 'error': error, 'success': success,
+                   'card': {'number': card.beautiful_number(), 'title': card.title, 'bank_account': card_ba.beautiful_iban(),
+                            'ba_title': card_ba.title, 'color': card.color, 'payment_system': card.payment_system,
+                            'cardholder': f'{card.cardholder_surname} {card.cardholder_name}', 'cvv': card.cvv,
+                            'expiry_date': card.expiry_date}}
+        return render(request, 'card_page.html', context)
+    else:
+        request.session['error'] = 'Ви не є власником цієї картки'
+        return HttpResponseRedirect('../')
+
+
+@login_required(redirect_field_name=None)
+def ba_page(request, ba_id):
+    user = request.user
+    ba = BankAccount.objects.get(id=ba_id)
+    if user.email == ba.email:
+        try:
+            error = request.session['error']
+            del request.session['error']
+        except KeyError:
+            error = None
+        try:
+            success = request.session['success']
+            del request.session['success']
+        except KeyError:
+            success = None
+
+        context = {'email': user, 'error': error, 'success': success,
+                   'ba': {'iban': ba.beautiful_iban(), 'title': ba.title, 'balance': ba.balance, 'currency': ba.currency,
+                          'full_name': f'{ba.surname} {ba.name} {ba.patronymic}'}}
+        return render(request, 'ba_page.html', context)
+    else:
+        request.session['error'] = 'Ви не є власником цього рахунку'
+        return HttpResponseRedirect('../')
