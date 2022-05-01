@@ -2,51 +2,106 @@
 
 {% block page_title %}Картки та рахунки{% endblock %}
 
+{% block style %}
+            .card {
+                position: relative;
+                top: 0;
+                left: 0;
+                min-width: 100px;
+                border: none;
+                padding: 5px;
+            }
+
+            .card-color {
+                position: relative;
+                top: 0;
+                left: 0;
+                height: 100%;
+            }
+
+            .card-payment-system {
+                position: absolute;
+                right: 6%;
+                bottom: 6%;
+                width: 30%;
+            }
+
+            .card-num {
+                position: absolute;
+                left: 0;
+                top: 25%;
+                display: block;
+                width: 100%;
+                letter-spacing: 0.1vw;
+            }
+
+            .card:hover{
+                transform: scale(1.05);
+                z-index: 1;
+            }
+
+            .no-cards-img, .no-ba-img{
+                width: 2rem;
+            }
+
+            .bank-account{
+                position: relative;
+                background-color: #d6d6d6;
+                border-radius: 20px;
+            }
+
+            .bank-account:hover{
+                transform: scale(1.013);
+                z-index: 1;
+            }
+
+            .ba-balance{
+                margin: auto;
+            }
+{% endblock %}
+
 {% block page %}
     {% load static %}
-<h1 class="border-bottom text-dark">Банківські картки <a href="#"><i class="bi bi-plus-circle-fill text-success text-end"></i></a></h1>
-    <div class="row row-cols-1 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 row-cols-xl-6 row-cols-xxl-7 g-3 text-center w-100">
-    {% if products %}
+    <h1 class="border-bottom text-dark w-100">Банківські картки <a href="cards/create"><i class="bi bi-plus-circle-fill text-success text-end"></i></a></h1>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xxl-6 g-3 text-center w-100 ps-2">
+    {% if cards %}
         {% for card in cards %}
             <div class="card col">
-                <img class="card-color" src="{% static 'images/cards/color/{{ card.color }}.svg' %}">
-                <img class="card-payment-system" src="{% static 'images/cards/payment_system/{{ card.payment_system }}.png' %}">
-                <p class="card-num">●●●● ●●●● ●●●● {{ card.last_numbers }}</p>
-                <a class="stretched-link" href="../card/{{ card.id }}"></a>
+                <img class="card-color" src="{% static 'images/cards/color/'|add:card.color|add:'.svg' %}">
+                <img class="card-payment-system" src="{% static 'images/cards/payment_system/'|add:card.payment_system|add:'.png' %}">
+                <p class="card-num"> {{ card.number }}</p>
+                <a class="stretched-link" href='../cards/{{ card.id }}'></a>
             </div>
         {% endfor %}
-            <div class="col">
-                <a href="#"><i class="bi-plus-circle-fill" style="font-size: 20%"></i></a>
-            </div>
 
     {% else %}
-        <div class="w-100">
-            <h1 class="no-cards">Схоже, що у вас немає банківських карт</h1>
-            <img class="no-cards-img" src="{% static 'images/smiley.png' %}">
-            <div class="row">
-                <div class="card">
-                    <img class="card-color" src="{% static 'images/cards/color/yellow.svg' %}">
-                    <img class="card-payment-system" src="{% static 'images/cards/payment_system/mastercard.png' %}">
-                    <p class="card-num">●●●● ●●●● ●●●● 1482</p>
-                    <a class="stretched-link" href="#"></a>
-                </div>
-                <div class="card">
-                    <img class="card-color" src="{% static 'images/cards/color/blue.svg' %}">
-                    <img class="card-payment-system" src="{% static 'images/cards/payment_system/visa.png' %}">
-                    <p class="card-num">●●●● ●●●● ●●●● 1482</p>
-                    <a class="stretched-link" href="#"></a>
-                </div>
-                <div class="card">
-                    <img class="card-color" src="{% static 'images/cards/color/grey.svg' %}">
-                    <img class="card-payment-system" src="{% static 'images/cards/payment_system/mastercard.png' %}">
-                    <p class="card-num">●●●● ●●●● ●●●● 1482</p>
-                    <a class="stretched-link" href="#"></a>
-                </div>
-            </div>
+        <div class="w-100 text-start">
+            <p class="no-cards text-muted">Схоже, що у вас немає банківських карт<img class="no-cards-img" src="{% static 'images/smiley.png' %}"></p>
         </div>
     {% endif %}
     </div>
 
-    <h1 class="border-bottom text-dark">Банківські рахунки</h1>
+    <h1 class="border-bottom text-dark w-100">Банківські рахунки <a href="bank_accounts/create"><i class="bi bi-plus-circle-fill text-success text-end"></i></a></h1>
+    <div class="g-3 w-100">
+        {% if bank_accounts %}
+            {% for ba in bank_accounts %}
+                <div class="bank-account row row-cols-1 row-cols-md-2 p-2 ms-1 my-1">
+                    <div class="col-md-8">
+                        <h3 class="ba-title">Назва: {{ ba.title }}</h3>
+                        <p class="ba-iban">Iban: {{ ba.iban }}</p>
+                        <p class="ba-currency">Валюта: {{ ba.currency }}</p>
+                        <a class="stretched-link" href='../bank_accounts/{{ ba.id }}'></a>
+                    </div>
+                    <div class="col-md-4 text-end ba-balance">
+                        <h4>{{ ba.balance }}</h4>
+                    </div>
+                </div>
+            {% endfor %}
 
+        {% else %}
+            <div class="w-100 text-start">
+                <p class="no-ba text-muted">Схоже, що у вас немає банківських рахунків<img class="no-ba-img" src="{% static 'images/smiley.png' %}"></p>
+            </div>
+        {% endif %}
+    </div>
 {% endblock %}

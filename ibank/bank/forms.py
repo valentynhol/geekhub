@@ -30,3 +30,22 @@ class SignUpForm(forms.Form):
     password1 = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'shadow m-1', 'placeholder': 'Пароль'}))
     password2 = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'shadow m-1',
                                                                   'placeholder': 'Повторіть пароль'}))
+
+
+class CardForm(forms.Form):
+    title = forms.CharField(widget=forms.TextInput(attrs={'class': 'shadow m-1',
+                                                          'placeholder': 'Назва картки'}))
+    bank_account = forms.ChoiceField(widget=forms.Select(attrs={'class': 'shadow m-1 dropdown dropdown-menu-dark'}),
+                                     choices=[('', 'Виберіть рахунок')])
+    color = forms.ChoiceField(widget=forms.Select(attrs={'class': 'shadow m-1 dropdown dropdown-menu-dark'}),
+                              choices=[('', 'Виберіть колір'), ('blue', 'Cиній'), ('cyan', 'Бірюзовий'),
+                                       ('green', 'Зелений'), ('grey', 'Сірий'), ('magenta', 'Пурпурний'),
+                                       ('orange', 'Оранжевий'), ('purple', 'Фіолетовий'), ('red', 'Червоний'),
+                                       ('yellow', 'Жовтий')])
+    payment_system = forms.ChoiceField(widget=forms.Select(attrs={'class': 'shadow m-1 dropdown dropdown-menu-dark'}),
+                                       choices=[('', 'Виберіть платіжну систему'), ('mastercard', 'Mastercard'), ('visa', 'Visa')])
+
+
+class BankAccountForm(forms.Form):
+    title = forms.CharField(widget=forms.TextInput(attrs={'class': 'shadow m-1',
+                                                          'placeholder': 'Назва рахунку'}))

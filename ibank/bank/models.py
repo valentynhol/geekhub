@@ -30,31 +30,41 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 class Card(models.Model):
-    title = models.TextField(_('назва картки'), max_length=100)
-    account_iban = models.TextField(_('iban'), max_length=29)
-    card_number = models.TextField(_('номер картки'), max_length=19, primary_key=True, unique=True)
-    expiry_date = models.TextField(_('термін дії'), max_length=5)
-    cvv = models.TextField(max_length=3)
-    cardholder_name = models.TextField(_("ім'я власника картки"), max_length=100)
-    cardholder_surname = models.TextField(_('прізвище власника картки'), max_length=100)
-    cardholder_email = models.EmailField(_('електронна адреса'), null=True)
+    title = models.CharField(_('назва картки'), max_length=100, default='Картка')
+    bank_account = models.BigIntegerField(_('банківський рахунок'), null=True)
+    card_number = models.CharField(_('номер картки'), max_length=19, unique=True)
+    expiry_date = models.CharField(_('термін дії'), max_length=5)
+    payment_system = models.CharField(_('платіжна система'), choices=[('visa', 'Visa'), ('mastercard', 'Mastercard')],
+                                      max_length=10)
+    cvv = models.CharField(max_length=3)
+    cardholder_name = models.CharField(_("ім'я власника картки"), max_length=30)
+    cardholder_surname = models.CharField(_('прізвище власника картки'), max_length=30)
+    cardholder_email = models.EmailField(_('електронна адреса власника картки'), null=True)
+    color = models.CharField(_('колір картки'), choices=[('blue', 'Cиній'), ('cyan', 'Бірюзовий'), ('green', 'Зелений'),
+                             ('grey', 'Сірий'), ('magenta', 'Пурпурний'), ('orange', 'Оранжевий'),
+                             ('purple', 'Фіолетовий'), ('red', 'Червоний'), ('yellow', 'Жовтий')], max_length=9,
+                             default='blue')
+
+    def __str__(self):
+        return self.card_number
 
     class Meta:
         verbose_name = _('картка')
         verbose_name_plural = _('картки')
 
-    def get_number_last_digits(self):
-        return self.card_number[14:18]
-
 
 class BankAccount(models.Model):
-    name = models.TextField(_("ім'я власника рахунку"), max_length=100)
-    surname = models.TextField(_('прізвище власника рахунку'), max_length=100)
-    patronymic = models.TextField(_('по-батькові власника рахунку'), max_length=100)
-    iban = models.TextField(_('iban'), max_length=29, primary_key=True, unique=True)
-    currency = models.TextField()
-    money = models.TextField()
+    title = models.CharField(_("назва банківського рахунку"), max_length=100, default='Картка')
+    name = models.CharField(_("ім'я власника рахунку"), max_length=30)
+    surname = models.CharField(_('прізвище власника рахунку'), max_length=30)
+    patronymic = models.CharField(_('по-батькові власника рахунку'), max_length=30)
+    iban = models.CharField(_('iban'), max_length=29, unique=True)
+    currency = models.CharField(_('валюта'), max_length=3)
+    balance = models.CharField(_('баланс'), max_length=100)
     email = models.EmailField(_('електронна адреса'), null=True)
+
+    def __str__(self):
+        return self.iban
 
     class Meta:
         verbose_name = _('банківський рахунок')

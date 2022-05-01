@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block style %}
+        .card {
+            position: relative;
+            top: 0;
+            left: 0;
+            min-width: 100px;
+            border: none;
+            padding: 5px;
+            max-width: 400px;
+        }
+
+        .card-color {
+            position: relative;
+            top: 0;
+            left: 0;
+            height: 100%;
+        }
+
+        .card-payment-system {
+            position: absolute;
+            right: 6%;
+            bottom: 6%;
+            width: 30%;
+        }
+
+        .card-num {
+            position: absolute;
+            left: 0;
+            top: 25%;
+            display: block;
+            width: 100%;
+            letter-spacing: 0.1vw;
+        }
+{% endblock %}
+
+{% block page %}{% load static %}
+    <div class="row row-cols-1 row-cols-md-2 g-3 w-100 ps-2">
+        <div class="card text-center">
+            <img class="card-color" src="{% static 'images/cards/color/'|add:card.color|add:'.svg' %}">
+            <img class="card-payment-system" src="{% static 'images/cards/payment_system/'|add:card.payment_system|add:'.png' %}">
+            <p class="card-num"> {{ card.number }}</p>
+        </div>
+        <div class="col text-dark">
+            <h1>{{ card.title }}</h1>
+            <p>Держатель картки: {{ card.cardholder }}</p>
+            <p>CVV/CVC: {{ card.cvv }}</p>
+            <p>Термін дії: {{ card.expiry_date }}</p>
+            <p>Рахунок: {{ card.bank_account }}</p>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Створення картки{% endblock %}
+
+{% block style %}
+            [name=title]:hover, [name=bank_account]:hover, [name=color]:hover, [name=payment_system]:hover{
+                border: 2px solid black;
+                border-radius: 7px;
+            }
+
+            [name=title]:focus, [name=bank_account]:focus, [name=color]:focus, [name=payment_system]:focus{
+                border: 2px solid black;
+                border-radius: 7px;
+            }
+
+            [name=title], [name=bank_account], [name=color], [name=payment_system]{
+                border: 1px solid grey;
+                border-radius: 7px;
+                height: 40px;
+                min-width: 100px;
+                max-width: 300px;
+            }
+
+            .bi{
+                padding: 4px;
+            }
+{% endblock %}
+
+{% block page %}
+
+<form action="" method="post">
+    <h1 class="text-dark" style="display: flex">Створення картки:</h1>
+    {% csrf_token %}
+    {{ form.title }}<br>
+    {{ form.bank_account }}<br>
+    {{ form.color }}<br>
+    {{ form.payment_system }}<br>
+    <input type="submit" value="Створити!" style="height: 40px" class="btn btn-dark mt-3 shadow">
+</form>
+{% endblock %}

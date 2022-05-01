@@ -20,7 +20,7 @@ except ImportError:
     BASE_DIR = Path(__file__).resolve().parent.parent
     SECRET_KEY = 'django-insecure-fd%2&eksmyrh&2hxk+@i$x$w*q_)c)6#w9rd_rvbc*pyk@siwn'
     DEBUG = False
-    ALLOWED_HOSTS = ['.localhost', '0.0.0.0', '127.0.0.1']
+    ALLOWED_HOSTS = ['ibank-gh.herokuapp.com']
 
     DATABASES = {
         'default': {
@@ -44,6 +44,26 @@ except ImportError:
         },
     ]
 
+    MIDDLEWARE = [
+        'django.middleware.security.SecurityMiddleware',
+        'django.contrib.sessions.middleware.SessionMiddleware',
+        'django.middleware.common.CommonMiddleware',
+        'django.middleware.csrf.CsrfViewMiddleware',
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+        'django.contrib.messages.middleware.MessageMiddleware',
+        'django.middleware.clickjacking.XFrameOptionsMiddleware',
+        'whitenoise.middleware.WhiteNoiseMiddleware',
+    ]
+
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+    STATIC_URL = '/static/'
+
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+    STATICFILES_DIRS = (
+        os.path.join(BASE_DIR, 'static'),
+    )
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -54,16 +74,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'bank.apps.BankConfig',
-]
-
-MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
 
@@ -99,8 +109,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-STATIC_ROOT = os.path.join(BASE_DIR, '../bank/static')
-STATIC_URL = 'static/'
 ROOT_URLCONF = 'bank_root.urls'
 AUTH_USER_MODEL = 'bank.User'
 
@@ -108,3 +116,7 @@ AUTH_USER_MODEL = 'bank.User'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGIN_URL = '/login'
+
+CSRF_TRUSTED_ORIGINS = ["https://ibank-gh.herokuapp.com"]
