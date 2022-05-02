@@ -67,7 +67,7 @@
                 <img class="card-color" src="{% static 'images/cards/color/'|add:card.color|add:'.svg' %}">
                 <img class="card-payment-system" src="{% static 'images/cards/payment_system/'|add:card.payment_system|add:'.png' %}">
                 <p class="card-num"> {{ card.number }}</p>
-                <a class="stretched-link" href='../cards/{{ card.id }}'></a>
+                <a class="stretched-link" href='../cards/{{ card.id }}' title="{{ card.title }}" data-toggle="tooltip" data-bs-placement="bottom"></a>
             </div>
         {% endfor %}
         </div>

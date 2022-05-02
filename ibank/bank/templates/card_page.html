@@ -50,6 +50,7 @@
             <p>CVV/CVC: {{ card.cvv }}</p>
             <p>Термін дії: {{ card.expiry_date }}</p>
             <p>Рахунок: {{ card.ba_title }} ({{ card.bank_account }})</p>
+            <a type="button" href="edit/{{ card.id }}" class="btn btn-secondary">Змінити</a>
         </div>
     </div>
 {% endblock %}

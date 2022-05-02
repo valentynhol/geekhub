@@ -13,6 +13,7 @@ urlpatterns = [
     path('bank_accounts/create', views.create_ba, name='create bank account'),
     path('bank_accounts/<int:ba_id>', views.ba_page, name='ba page'),
     path('cards/<int:card_id>', views.card_page, name='card page'),
+    path('cards/edit/<int:card_id>', views.edit_card, name='edit card'),
     #path('history/', views.history, name='history'),
     #path('settings/', views.settings, name='settings'),
 ]

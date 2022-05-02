@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.utils import IntegrityError
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect
+
 from .forms import LogInForm, SignUpForm, CardForm, BankAccountForm
 from .models import Card, BankAccount, User
 
@@ -124,7 +125,7 @@ def home(request):
 
     cards = []
     for card in raw_cards:
-        cards.append({'number': card.beautiful_number(), 'color': card.color,
+        cards.append({'title': card.title, 'number': card.beautiful_number(), 'color': card.color,
                       'payment_system': card.payment_system, 'id': card.id})
     bas = []
     for ba in raw_bas:
@@ -141,7 +142,8 @@ def home(request):
     except KeyError:
         success = None
 
-    return render(request, 'cards.html', {'email': user, 'cards': cards, 'bank_accounts': bas, 'error': error, 'success': success})
+    return render(request, 'cards.html', {'email': user, 'cards': cards, 'bank_accounts': bas,
+                                          'error': error, 'success': success})
 
 
 @login_required(redirect_field_name=None)
@@ -222,7 +224,12 @@ def create_ba(request):
 @login_required(redirect_field_name=None)
 def card_page(request, card_id):
     user = request.user
-    card = Card.objects.get(id=card_id)
+    try:
+        card = Card.objects.get(id=card_id)
+    except Card.DoesNotExist:
+        request.session['error'] = 'Такої карти не існує!'
+        return HttpResponseRedirect('../')
+
     if user.email == card.cardholder_email:
         card_ba = BankAccount.objects.get(id=card.bank_account)
 
@@ -241,17 +248,22 @@ def card_page(request, card_id):
                    'card': {'number': card.beautiful_number(), 'title': card.title, 'bank_account': card_ba.beautiful_iban(),
                             'ba_title': card_ba.title, 'color': card.color, 'payment_system': card.payment_system,
                             'cardholder': f'{card.cardholder_surname} {card.cardholder_name}', 'cvv': card.cvv,
-                            'expiry_date': card.expiry_date}}
+                            'expiry_date': card.expiry_date, 'id': card.id}}
         return render(request, 'card_page.html', context)
     else:
-        request.session['error'] = 'Ви не є власником цієї картки'
+        request.session['error'] = 'Ви не є власником цієї картки!'
         return HttpResponseRedirect('../')
 
 
 @login_required(redirect_field_name=None)
 def ba_page(request, ba_id):
     user = request.user
-    ba = BankAccount.objects.get(id=ba_id)
+    try:
+        ba = BankAccount.objects.get(id=ba_id)
+    except BankAccount.DoesNotExist:
+        request.session['error'] = 'Такого рахунку не існує!'
+        return HttpResponseRedirect('../')
+
     if user.email == ba.email:
         try:
             error = request.session['error']
@@ -269,5 +281,43 @@ def ba_page(request, ba_id):
                           'full_name': f'{ba.surname} {ba.name} {ba.patronymic}'}}
         return render(request, 'ba_page.html', context)
     else:
-        request.session['error'] = 'Ви не є власником цього рахунку'
+        request.session['error'] = 'Ви не є власником цього рахунку!'
+        return HttpResponseRedirect('../')
+
+
+@login_required(redirect_field_name=None)
+def edit_card(request, card_id):
+    user = request.user
+    try:
+        card = Card.objects.get(id=card_id)
+    except Card.DoesNotExist:
+        request.session['error'] = 'Такої карти не існує!'
+        return HttpResponseRedirect('../')
+
+    if user.email == card.cardholder_email:
+        if request.method == 'POST':
+            card.title = request.POST['title']
+            card.color = request.POST['color']
+            card.save()
+
+            request.session['success'] = 'Картку успішно змінено'
+            return HttpResponseRedirect('/cards/'+str(card_id))
+        else:
+            form = CardForm(initial={'color': card.color, 'title': card.title})
+
+            try:
+                error = request.session['error']
+                del request.session['error']
+            except KeyError:
+                error = None
+            try:
+                success = request.session['success']
+                del request.session['success']
+            except KeyError:
+                success = None
+
+            context = {'form': form, 'email': user, 'error': error, 'success': success, 'card_title': card.title, 'card_id': card_id}
+            return render(request, 'edit_card.html', context)
+    else:
+        request.session['error'] = 'Ви не є власником цієї картки!'
         return HttpResponseRedirect('../')
