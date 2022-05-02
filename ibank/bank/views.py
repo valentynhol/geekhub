@@ -142,8 +142,7 @@ def home(request):
     except KeyError:
         success = None
 
-    return render(request, 'cards.html', {'email': user, 'cards': cards, 'bank_accounts': bas,
-                                          'error': error, 'success': success})
+    return render(request, 'cards.html', {'cards': cards, 'bank_accounts': bas, 'error': error, 'success': success})
 
 
 @login_required(redirect_field_name=None)
@@ -185,7 +184,7 @@ def create_card(request):
         except KeyError:
             success = None
 
-        context = {'form': form, 'email': user, 'error': error, 'success': success}
+        context = {'form': form, 'error': error, 'success': success}
         return render(request, 'add_card.html', context)
 
 
@@ -217,7 +216,7 @@ def create_ba(request):
             success = None
 
         form = BankAccountForm()
-        context = {'form': form, 'email': user, 'error': error, 'success': success}
+        context = {'form': form, 'error': error, 'success': success}
         return render(request, 'add_bank_account.html', context)
 
 
@@ -244,7 +243,7 @@ def card_page(request, card_id):
         except KeyError:
             success = None
 
-        context = {'email': user, 'error': error, 'success': success,
+        context = {'error': error, 'success': success,
                    'card': {'number': card.beautiful_number(), 'title': card.title, 'bank_account': card_ba.beautiful_iban(),
                             'ba_title': card_ba.title, 'color': card.color, 'payment_system': card.payment_system,
                             'cardholder': f'{card.cardholder_surname} {card.cardholder_name}', 'cvv': card.cvv,
@@ -276,7 +275,7 @@ def ba_page(request, ba_id):
         except KeyError:
             success = None
 
-        context = {'email': user, 'error': error, 'success': success,
+        context = {'error': error, 'success': success,
                    'ba': {'iban': ba.beautiful_iban(), 'title': ba.title, 'balance': ba.balance, 'currency': ba.currency,
                           'full_name': f'{ba.surname} {ba.name} {ba.patronymic}'}}
         return render(request, 'ba_page.html', context)
@@ -316,8 +315,47 @@ def edit_card(request, card_id):
             except KeyError:
                 success = None
 
-            context = {'form': form, 'email': user, 'error': error, 'success': success, 'card_title': card.title, 'card_id': card_id}
+            context = {'form': form, 'error': error, 'success': success, 'card_title': card.title,
+                       'card_id': card_id}
             return render(request, 'edit_card.html', context)
     else:
         request.session['error'] = 'Ви не є власником цієї картки!'
+        return HttpResponseRedirect('../')
+
+
+@login_required(redirect_field_name=None)
+def add_money(request, ba_id):
+    user = request.user
+    try:
+        ba = BankAccount.objects.get(id=ba_id)
+    except BankAccount.DoesNotExist:
+        request.session['error'] = 'Такого рахунку не існує!'
+        return HttpResponseRedirect('../')
+
+    if user.email == ba.email:
+        if request.method == 'POST':
+            if request.POST['money'] > 0:
+                ba.balance += request.POST['money']
+                ba.save()
+                request.session['success'] = 'Кошти успішно нараховано на рахунок'
+                return HttpResponseRedirect('/bank_accounts/'+str(ba_id))
+            else:
+                request.session['error'] = "Введена сума має бути невід'ємною!"
+                return HttpResponseRedirect('/bank_accounts/' + str(ba_id))
+        else:
+            try:
+                error = request.session['error']
+                del request.session['error']
+            except KeyError:
+                error = None
+            try:
+                success = request.session['success']
+                del request.session['success']
+            except KeyError:
+                success = None
+
+            context = {'error': error, 'success': success, 'ba_title': ba.title, 'ba_id': ba_id}
+            return render(request, 'add_money.html', context)
+    else:
+        request.session['error'] = 'Ви не є власником цього рахунку!'
         return HttpResponseRedirect('../')
