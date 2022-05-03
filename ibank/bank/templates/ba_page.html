@@ -8,4 +8,5 @@
     <p>IBAN: {{ ba.iban }}</p>
     <p>Валюта: {{ ba.currency }}</p>
     <p>Баланс: {{ ba.balance }}</p>
+    <div class="row"><a href="add_money/{{ ba.id }}" class="btn btn-success col col-auto mx-2">Додати кошти</a><a href="edit/{{ ba.id }}" class="btn btn-primary col col-auto mx-2">Змінити</a></div>
 {% endblock %}

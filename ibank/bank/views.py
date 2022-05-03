@@ -1,3 +1,4 @@
+import decimal
 import random
 import datetime
 
@@ -277,7 +278,7 @@ def ba_page(request, ba_id):
 
         context = {'error': error, 'success': success,
                    'ba': {'iban': ba.beautiful_iban(), 'title': ba.title, 'balance': ba.balance, 'currency': ba.currency,
-                          'full_name': f'{ba.surname} {ba.name} {ba.patronymic}'}}
+                          'full_name': f'{ba.surname} {ba.name} {ba.patronymic}', 'id': ba_id}}
         return render(request, 'ba_page.html', context)
     else:
         request.session['error'] = 'Ви не є власником цього рахунку!'
@@ -334,13 +335,20 @@ def add_money(request, ba_id):
 
     if user.email == ba.email:
         if request.method == 'POST':
-            if request.POST['money'] > 0:
-                ba.balance += request.POST['money']
-                ba.save()
-                request.session['success'] = 'Кошти успішно нараховано на рахунок'
-                return HttpResponseRedirect('/bank_accounts/'+str(ba_id))
-            else:
-                request.session['error'] = "Введена сума має бути невід'ємною!"
+            try:
+                if int(request.POST['money']) < 0:
+                    request.session['error'] = "Введена сума має бути додатньою!"
+                    return HttpResponseRedirect('/bank_accounts/' + str(ba_id))
+                elif int(request.POST['money']) > 10000:
+                    request.session['error'] = "Введена сума має бути більше 10000!"
+                    return HttpResponseRedirect('/bank_accounts/' + str(ba_id))
+                else:
+                    ba.balance += decimal.Decimal(float(request.POST['money']))
+                    ba.save()
+                    request.session['success'] = 'Кошти успішно нараховано на рахунок'
+                    return HttpResponseRedirect('/bank_accounts/' + str(ba_id))
+            except ValueError:
+                request.session['error'] = "Не треба ламати сайт!"
                 return HttpResponseRedirect('/bank_accounts/' + str(ba_id))
         else:
             try:
@@ -356,6 +364,44 @@ def add_money(request, ba_id):
 
             context = {'error': error, 'success': success, 'ba_title': ba.title, 'ba_id': ba_id}
             return render(request, 'add_money.html', context)
+    else:
+        request.session['error'] = 'Ви не є власником цього рахунку!'
+        return HttpResponseRedirect('../')
+
+
+@login_required(redirect_field_name=None)
+def edit_ba(request, ba_id):
+    user = request.user
+    try:
+        ba = BankAccount.objects.get(id=ba_id)
+    except BankAccount.DoesNotExist:
+        request.session['error'] = 'Такого рахунку не існує!'
+        return HttpResponseRedirect('../')
+
+    if user.email == ba.email:
+        if request.method == 'POST':
+            ba.title = request.POST['title']
+            ba.save()
+
+            request.session['success'] = 'Картку успішно змінено'
+            return HttpResponseRedirect('/bank_accounts/'+str(ba_id))
+        else:
+            form = CardForm(initial={'title': ba.title})
+
+            try:
+                error = request.session['error']
+                del request.session['error']
+            except KeyError:
+                error = None
+            try:
+                success = request.session['success']
+                del request.session['success']
+            except KeyError:
+                success = None
+
+            context = {'form': form, 'error': error, 'success': success, 'card_title': ba.title,
+                       'ba_id': ba_id}
+            return render(request, 'edit_ba.html', context)
     else:
         request.session['error'] = 'Ви не є власником цього рахунку!'
         return HttpResponseRedirect('../')

@@ -17,7 +17,7 @@ urlpatterns = [
     # Bank accounts
     path('bank_accounts/create', views.create_ba, name='create bank account'),
     path('bank_accounts/<int:ba_id>', views.ba_page, name='ba page'),
-    #path('bank_accounts/edit/<int:ba_id>', views.add_money, name='edit ba'),
+    path('bank_accounts/edit/<int:ba_id>', views.edit_ba, name='edit ba'),
     path('bank_accounts/add_money/<int:ba_id>', views.add_money, name='add money'),
 
     # Cards

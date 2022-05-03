@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block page_title %}Створення рахунку{% endblock %}
+{% block page_title %}Зміна рахунку: {{ ba_title }}{% endblock %}
 
 {% block style %}
             [name=title]:hover{
@@ -21,17 +21,17 @@
             }
 
             form{
-                min-width: 150px;
+                min-width: 230px;
                 max-width: 300px;
                 width: 25%;
             }
 {% endblock %}
 
 {% block page %}
-<h1>Створення банківського рахунку:</h1>
+<h1 class="text-center">{{ ba_title }}</h1>
 <form action="" method="post" class="mx-auto">
     {% csrf_token %}
     {{ form.title }}<br>
-    <input type="submit" value="Створити" style="height: 40px; float: right" class="btn btn-dark shadow">
+    <a href="../{{ ba_id }}" style="height: 40px; float: left" class="btn btn-secondary mt-3 shadow ms-1">Відмінити</a><input type="submit" value="Змінити" style="height: 40px; float: right" class="btn btn-success mt-3 shadow">
 </form>
 {% endblock %}

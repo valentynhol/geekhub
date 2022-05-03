@@ -64,7 +64,7 @@ class BankAccount(models.Model):
     patronymic = models.CharField(_('по-батькові власника рахунку'), max_length=30)
     iban = models.CharField(_('iban'), max_length=29, unique=True)
     currency = models.CharField(_('валюта'), max_length=3)
-    balance = models.CharField(_('баланс'), max_length=100)
+    balance = models.DecimalField(_('баланс'), max_digits=100, decimal_places=2)
     email = models.EmailField(_('електронна адреса'), null=True)
 
     def __str__(self):
