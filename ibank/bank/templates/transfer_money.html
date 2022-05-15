@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Переказати кошти{% endblock %}
+
+{% block style %}
+            [name=recipient_card]:hover, [name=comment]:hover{
+                border: 2px solid black;
+                border-radius: 7px;
+            }
+
+            [name=recipient_card]:focus, [name=comment]:focus{
+                border: 2px solid black;
+                border-radius: 7px;
+            }
+
+            [name=recipient_card], [name=comment]{
+                border: 1px solid grey;
+                border-radius: 7px;
+                height: 40px;
+                width: 100%;
+                padding: 8px;
+            }
+
+            form{
+                min-width: 230px;
+                max-width: 450px;
+                width: 50%;
+            }
+{% endblock %}
+
+{% block page %}
+<h1 class="text-center">Переказати кошти з картки {{ card_title }}</h1>
+<form action="" method="post" class="mx-auto">
+    {% csrf_token %}
+    <input type="text" name="recipient_card" placeholder="Номер картки">
+    <textarea name="comment" placeholder="Коментар" style="height: 200px; resize: none" maxlength="100" class="mt-1"></textarea>
+    <h3>Сума: <label for="money-range" id="money">{{ step }}</label></h3>
+    <div class="row">
+        <a type="button" class="btn col col-auto" onclick="money('-')"><i class="bi-chevron-left"></i></a>
+        <input name="money" id="money-range" type="range" class="form-range col my-auto" min="{{ step }}" max="{{ max_money }}" step="{{ step }}" value="{{ step }}" oninput="getElementById('money').innerText = this.value">
+        <a type="button" class="btn col col-auto" onclick="money('+')"><i class="bi-chevron-right"></i></a>
+    </div>
+
+    <a href="../{{ card_id }}" style="height: 40px; float: left" class="btn btn-secondary mt-3 shadow ms-1">Скасувати</a><input type="submit" value="Переказати" style="height: 40px; float: right" class="btn btn-success mt-3 shadow">
+</form>
+{% endblock %}
+{% block script %}
+<script>
+    function money(operation){
+        if (operation === '+'){
+            document.getElementById('money-range').value = parseInt(document.getElementById('money-range').value) + {{ step }};
+        } else {
+            document.getElementById('money-range').value -= {{ step }};
+        }
+        document.getElementById('money').innerText = document.getElementById('money-range').value;
+    }
+</script>
+{% endblock %}

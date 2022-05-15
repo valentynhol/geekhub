@@ -18,6 +18,7 @@
                 border-radius: 7px;
                 height: 40px;
                 width: 100%;
+                padding: 8px;
             }
 
             form{
@@ -32,6 +33,6 @@
 <form action="" method="post" class="mx-auto">
     {% csrf_token %}
     {{ form.title }}<br>
-    <a href="../{{ ba_id }}" style="height: 40px; float: left" class="btn btn-secondary mt-3 shadow ms-1">Відмінити</a><input type="submit" value="Змінити" style="height: 40px; float: right" class="btn btn-success mt-3 shadow">
+    <a href="../{{ ba_id }}" style="height: 40px; float: left" class="btn btn-secondary mt-3 shadow ms-1">Скасувати</a><input type="submit" value="Змінити" style="height: 40px; float: right" class="btn btn-success mt-3 shadow">
 </form>
 {% endblock %}

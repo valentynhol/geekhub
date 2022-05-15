@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Транзакція{% endblock %}
+
+{% block style_md%}
+{% endblock %}
+{% block style %}
+{% endblock %}
+
+{% block page %}
+<h1 class="text-center mb-5">Транзакція</h1>
+    {% if income %}
+        <h2>Отримано <span class="text-success">{{ receiver_money }}{{ receiver_currency }}</span> від {{ sender }}</h2>
+        <p>Рахунок відправника: {{ sender_iban }}</p>
+        <p>Рахунок, на який надійшли кошти: {{ receiver_iban }}</p>
+        <p>Коментар відправника: {{ msg }}</p>
+    {% else %}
+        <h2>Відправлено <span class="text-danger">{{ sender_money }}{{ sender_currency }}</span> до {{ receiver }}</h2>
+        <p>Рахунок, з якого відправлено кошти: {{ sender_iban }}</p>
+        <p>Рахунок, на який відправлено кошти: {{ receiver_iban }}</p>
+        <p>Ваш коментар: {{ msg }}</p>
+    {% endif %}
+{% endblock %}

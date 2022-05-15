@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import Card, BankAccount
-from .models import User
+from .models import Card, BankAccount, User, ExchangeRate, Transaction
 from django.utils.translation import gettext_lazy as _
 
 
@@ -31,3 +30,5 @@ class UserAdmin(BaseUserAdmin):
 admin.site.register(User, UserAdmin)
 admin.site.register(Card)
 admin.site.register(BankAccount)
+admin.site.register(ExchangeRate)
+admin.site.register(Transaction)

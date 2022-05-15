@@ -3,21 +3,22 @@
 {% block page_title %}Створення рахунку{% endblock %}
 
 {% block style %}
-            [name=title]:hover{
+            [name=title]:hover, [name=currency]:hover{
                 border: 2px solid black;
                 border-radius: 7px;
             }
 
-            [name=title]:focus{
+            [name=title]:focus, [name=currency]:focus{
                 border: 2px solid black;
                 border-radius: 7px;
             }
 
-            [name=title]{
+            [name=title], [name=currency]{
                 border: 1px solid grey;
                 border-radius: 7px;
                 height: 40px;
                 width: 100%;
+                padding: 8px;
             }
 
             form{
@@ -32,6 +33,7 @@
 <form action="" method="post" class="mx-auto">
     {% csrf_token %}
     {{ form.title }}<br>
+    {{ form.currency }}
     <input type="submit" value="Створити" style="height: 40px; float: right" class="btn btn-dark shadow">
 </form>
 {% endblock %}

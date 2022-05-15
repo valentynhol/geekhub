@@ -78,3 +78,48 @@ class BankAccount(models.Model):
     class Meta:
         verbose_name = _('банківський рахунок')
         verbose_name_plural = _('банківські рахунки')
+
+
+class ExchangeRate(models.Model):
+    date = models.DateField(_('дата'), unique=True, primary_key=True)
+    rate = models.JSONField(_('курс обміну'))
+
+    def __str__(self):
+        return self.date.strftime("%d.%m.%Y")
+
+    class Meta:
+        verbose_name = _('курс обміну')
+        verbose_name_plural = _('курси обміну')
+
+
+class Transaction(models.Model):
+    sender_bank_account = models.CharField(_('iban відправника'), max_length=29)
+    receiver_bank_account = models.CharField(_('iban отримувача'), max_length=29)
+
+    receiver_money = models.DecimalField(_('сума в валюті отримувача'), max_digits=100, decimal_places=2)
+    sender_money = models.DecimalField(_('сума в валюті відправника'), max_digits=100, decimal_places=2)
+
+    comment = models.CharField(_('коментар'), max_length=100)
+    time = models.DateTimeField(_('час'), auto_now_add=True)
+
+    showing_to_sender = models.BooleanField(_('Показується для відправника'), default=True)
+    showing_to_receiver = models.BooleanField(_('Показується для отримувача'), default=True)
+
+    def __str__(self):
+        return self.time.strftime("%d.%m.%Y %H:%M")
+
+    def short_comment(self):
+        comment = self.comment
+        if not comment:
+            iban = self.sender_bank_account
+            beautiful_iban = iban[0:4] + ' ' + iban[4:8] + ' ' + iban[8:12] + ' ' + iban[12:16] + ' ' + iban[16:20] \
+                                       + ' ' + iban[20:24] + ' ' + iban[24:28] + ' ' + iban[28]
+            return 'Переказ з рахунку ' + beautiful_iban
+        elif len(comment) <= 50:
+            return comment
+        else:
+            return comment[0:49]+'...'
+
+    class Meta:
+        verbose_name = _('транзакція')
+        verbose_name_plural = _('транзакції')

@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block page_title %}Додати кошти: {{ ba_title }}{% endblock %}
+{% block page_title %}Зняти кошти: {{ ba_title }}{% endblock %}
 
 {% block style %}
             form{
@@ -17,10 +17,10 @@
     <h3>Сума: <label for="money-range" id="money">100</label></h3>
     <div class="row">
         <a type="button" class="btn col col-auto" onclick="money('-')"><i class="bi-chevron-left"></i></a>
-        <input name="money" id="money-range" type="range" class="form-range col my-auto" min="100" max="10000" step="50" value="100" oninput="getElementById('money').innerText = this.value">
+        <input name="money" id="money-range" type="range" class="form-range col my-auto" min="100" max="{{ max_money }}" step="50" value="100" oninput="getElementById('money').innerText = this.value">
         <a type="button" class="btn col col-auto" onclick="money('+')"><i class="bi-chevron-right"></i></a>
     </div>
-    <a href="../{{ ba_id }}" style="height: 40px; float: left" class="btn btn-secondary mt-3 shadow ms-1">Скасувати</a><input type="submit" value="Додати" style="height: 40px; float: right" class="btn btn-success mt-3 shadow">
+    <a href="../{{ ba_id }}" style="height: 40px; float: left" class="btn btn-secondary mt-3 shadow ms-1">Скасувати</a><input type="submit" value="Зняти" style="height: 40px; float: right" class="btn btn-danger mt-3 shadow">
 </form>
 {% endblock %}
 {% block script %}

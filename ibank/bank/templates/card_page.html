@@ -17,7 +17,7 @@
             position: relative;
             top: 0;
             left: 0;
-            height: 100%;
+            width: 100%;
         }
 
         .card-payment-system {
@@ -35,14 +35,29 @@
             width: 100%;
             letter-spacing: 0.1vw;
         }
+
+        .copy:hover{
+            transform: scale(0.9);
+            color: rgba(255, 255, 255, 0.5);
+            text-shadow: 0 0 2rem #000;
+        }
+        .copy{
+            transition: transform 0.5s, color 0.5s;
+            position: absolute;
+            padding: unset;
+            color: #000;
+            opacity: .5;
+        }
 {% endblock %}
 
 {% block page %}{% load static %}
-    <div class="row row-cols-1 row-cols-md-2 g-3 w-100 ps-2">
-        <div class="card text-center">
-            <img class="card-color" src="{% static 'images/cards/color/'|add:card.color|add:'.svg' %}">
-            <img class="card-payment-system" src="{% static 'images/cards/payment_system/'|add:card.payment_system|add:'.png' %}">
-            <p class="card-num"> {{ card.number }}</p>
+    <div class="row row-cols-1 row-cols-md-2 g-3 w-100 ps-2" style="min-height: 100%">
+        <div class="card text-center" style="height: min-content">
+            <div class="card">
+                <img class="card-color" src="{% static 'images/cards/color/'|add:card.color|add:'.svg' %}">
+                <img class="card-payment-system" src="{% static 'images/cards/payment_system/'|add:card.payment_system|add:'.png' %}">
+                <p class="card-num">{{ card.number }} <a onclick="copyNumberToClipboard()" class="copy-button" title="Копіювати номер"><i class="bi-clipboard2-fill copy ms-1"></i></a></p>
+            </div>
         </div>
         <div class="col">
             <h1>{{ card.title }}</h1>
@@ -50,7 +65,34 @@
             <p>CVV/CVC: {{ card.cvv }}</p>
             <p>Термін дії: {{ card.expiry_date }}</p>
             <p>Рахунок: {{ card.ba_title }} ({{ card.bank_account }})</p>
-            <a type="button" href="edit/{{ card.id }}" class="btn btn-secondary">Змінити</a>
+            <div class="row m-1">
+                <a type="button" href="edit/{{ card.id }}" class="btn btn-secondary col col-auto m-1">Змінити</a>
+                {% if balance >= 10 %}
+                <a type="button" href="transfer_money/{{ card.id }}" class="btn btn-success col col-auto m-1">Переказати кошти</a>
+                {% endif %}
+            </div>
         </div>
     </div>
+    <div class="toast-container position-fixed top-0 mt-3 start-50 translate-middle-x" style="z-index: 3">
+        <div id="copy" class="toast bg-dark bg-gradient text-light" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="2000" style="--bs-bg-opacity: .9">
+        <div class="toast-body">
+            <p class="m-auto text-center">Номер скопійовано</p>
+        </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+            <script>
+                function copyNumberToClipboard(){
+                    navigator.clipboard.writeText(document.getElementsByClassName('card-num')[0].innerText);
+                    document.getElementsByClassName('copy-button')[0].innerHTML = '<i class="bi-check2 copy ms-1"></i>';
+                    const toast = new bootstrap.Toast(document.getElementById('copy'))
+                    toast.show()
+                    setTimeout(function () {
+                        document.getElementsByClassName('copy-button')[0].innerHTML = '<i class="bi-clipboard2-fill copy ms-1"></i>'
+                    }, 2000);
+
+                }
+            </script>
 {% endblock %}

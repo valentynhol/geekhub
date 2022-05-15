@@ -1,15 +1,16 @@
 import decimal
 import random
 import datetime
+import requests
 
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.db.utils import IntegrityError
 from django.contrib.auth import authenticate, login, logout
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse, Http404
 
-from .forms import LogInForm, SignUpForm, CardForm, BankAccountForm
-from .models import Card, BankAccount, User
+from .forms import LogInForm, SignUpForm, CardForm, BankAccountForm, ExchangeRateForm
+from .models import Card, BankAccount, User, ExchangeRate, Transaction
 
 
 def __generate_card_num(payment_system):
@@ -68,7 +69,7 @@ def user_signup(request):
                                                 patronymic=request.POST['patronymic'],
                                                 phone_number=request.POST['phone_number'])
                 login(request, user)
-                return HttpResponseRedirect('../')
+                return HttpResponseRedirect('/')
             except IntegrityError as signup_error:
                 request.session['error'] = \
                     'Ця електронна адреса вже використовується' \
@@ -95,7 +96,7 @@ def user_login(request):
         user = authenticate(request, email=request.POST['email'], password=request.POST['password'])
         if user:
             login(request, user)
-            return HttpResponseRedirect('../')
+            return HttpResponseRedirect('/')
         else:
             request.session['error'] = 'Неправильна електронна адреса або пароль!'
     else:
@@ -114,7 +115,7 @@ def user_login(request):
 @login_required(redirect_field_name=None)
 def user_logout(request):
     logout(request)
-    return HttpResponseRedirect('../')
+    return HttpResponseRedirect('/')
 
 
 @login_required(redirect_field_name=None)
@@ -163,30 +164,34 @@ def create_card(request):
                             cardholder_name=user.first_name, cardholder_surname=user.last_name,
                             cardholder_email=user.email)
                 card.save()
-                return HttpResponseRedirect('../')
+                return HttpResponseRedirect('/')
             except IntegrityError:
                 pass
         request.session['error'] = 'Помилка створення карти'
-        return HttpResponseRedirect('../')
+        return HttpResponseRedirect('/')
     else:
         form = CardForm()
         bas = BankAccount.objects.all().filter(email=user.email)
 
-        form.fields['bank_account'].choices += [(bank_account.id, bank_account.title) for bank_account in bas]
+        if bas:
+            form.fields['bank_account'].choices += [(bank_account.id, bank_account.title) for bank_account in bas]
 
-        try:
-            error = request.session['error']
-            del request.session['error']
-        except KeyError:
-            error = None
-        try:
-            success = request.session['success']
-            del request.session['success']
-        except KeyError:
-            success = None
+            try:
+                error = request.session['error']
+                del request.session['error']
+            except KeyError:
+                error = None
+            try:
+                success = request.session['success']
+                del request.session['success']
+            except KeyError:
+                success = None
 
-        context = {'form': form, 'error': error, 'success': success}
-        return render(request, 'add_card.html', context)
+            context = {'form': form, 'error': error, 'success': success}
+            return render(request, 'add_card.html', context)
+
+        request.session['error'] = 'Спочатку потрібно створити рахунок'
+        return HttpResponseRedirect('/')
 
 
 @login_required(redirect_field_name=None)
@@ -196,14 +201,15 @@ def create_ba(request):
         for i in range(60):
             try:
                 iban = __generate_iban('checking')
-                ba = BankAccount(title=request.POST['title'], iban=iban, currency='UAH', balance='0', name=user.first_name,
-                                 surname=user.last_name, patronymic=user.patronymic, email=user.email)
+                ba = BankAccount(title=request.POST['title'], iban=iban, currency=request.POST['currency'], balance='0',
+                                 name=user.first_name, surname=user.last_name, patronymic=user.patronymic,
+                                 email=user.email)
                 ba.save()
-                return HttpResponseRedirect('../')
+                return HttpResponseRedirect('/')
             except IntegrityError:
                 pass
         request.session['error'] = 'Помилка створення рахункy'
-        return HttpResponseRedirect('../')
+        return HttpResponseRedirect('/')
     else:
         try:
             error = request.session['error']
@@ -228,7 +234,7 @@ def card_page(request, card_id):
         card = Card.objects.get(id=card_id)
     except Card.DoesNotExist:
         request.session['error'] = 'Такої карти не існує!'
-        return HttpResponseRedirect('../')
+        return HttpResponseRedirect('/')
 
     if user.email == card.cardholder_email:
         card_ba = BankAccount.objects.get(id=card.bank_account)
@@ -244,7 +250,7 @@ def card_page(request, card_id):
         except KeyError:
             success = None
 
-        context = {'error': error, 'success': success,
+        context = {'error': error, 'success': success, 'balance': card_ba.balance,
                    'card': {'number': card.beautiful_number(), 'title': card.title, 'bank_account': card_ba.beautiful_iban(),
                             'ba_title': card_ba.title, 'color': card.color, 'payment_system': card.payment_system,
                             'cardholder': f'{card.cardholder_surname} {card.cardholder_name}', 'cvv': card.cvv,
@@ -252,17 +258,20 @@ def card_page(request, card_id):
         return render(request, 'card_page.html', context)
     else:
         request.session['error'] = 'Ви не є власником цієї картки!'
-        return HttpResponseRedirect('../')
+        return HttpResponseRedirect('/')
 
 
 @login_required(redirect_field_name=None)
 def ba_page(request, ba_id):
+    def sort_transactions(element):
+        return element[0]
+
     user = request.user
     try:
         ba = BankAccount.objects.get(id=ba_id)
     except BankAccount.DoesNotExist:
         request.session['error'] = 'Такого рахунку не існує!'
-        return HttpResponseRedirect('../')
+        return HttpResponseRedirect('/')
 
     if user.email == ba.email:
         try:
@@ -276,13 +285,23 @@ def ba_page(request, ba_id):
         except KeyError:
             success = None
 
-        context = {'error': error, 'success': success,
+        income_transactions = Transaction.objects.all().filter(receiver_bank_account=ba.iban, showing_to_receiver=True)
+        outcome_transactions = Transaction.objects.all().filter(sender_bank_account=ba.iban, showing_to_sender=True)
+        transactions = []
+        for income_transaction in income_transactions:
+            transactions.append([income_transaction.time, income_transaction.short_comment(), income_transaction.receiver_money, 'income', income_transaction.id])
+        for outcome_transaction in outcome_transactions:
+            transactions.append([outcome_transaction.time, outcome_transaction.short_comment(), outcome_transaction.sender_money, 'outcome', outcome_transaction.id])
+
+        transactions.sort(key=sort_transactions, reverse=True)
+
+        context = {'error': error, 'success': success, 'transactions': transactions,
                    'ba': {'iban': ba.beautiful_iban(), 'title': ba.title, 'balance': ba.balance, 'currency': ba.currency,
                           'full_name': f'{ba.surname} {ba.name} {ba.patronymic}', 'id': ba_id}}
         return render(request, 'ba_page.html', context)
     else:
         request.session['error'] = 'Ви не є власником цього рахунку!'
-        return HttpResponseRedirect('../')
+        return HttpResponseRedirect('/')
 
 
 @login_required(redirect_field_name=None)
@@ -292,7 +311,7 @@ def edit_card(request, card_id):
         card = Card.objects.get(id=card_id)
     except Card.DoesNotExist:
         request.session['error'] = 'Такої карти не існує!'
-        return HttpResponseRedirect('../')
+        return HttpResponseRedirect('/')
 
     if user.email == card.cardholder_email:
         if request.method == 'POST':
@@ -321,7 +340,7 @@ def edit_card(request, card_id):
             return render(request, 'edit_card.html', context)
     else:
         request.session['error'] = 'Ви не є власником цієї картки!'
-        return HttpResponseRedirect('../')
+        return HttpResponseRedirect('/')
 
 
 @login_required(redirect_field_name=None)
@@ -331,7 +350,7 @@ def add_money(request, ba_id):
         ba = BankAccount.objects.get(id=ba_id)
     except BankAccount.DoesNotExist:
         request.session['error'] = 'Такого рахунку не існує!'
-        return HttpResponseRedirect('../')
+        return HttpResponseRedirect('/')
 
     if user.email == ba.email:
         if request.method == 'POST':
@@ -340,7 +359,7 @@ def add_money(request, ba_id):
                     request.session['error'] = "Введена сума має бути додатньою!"
                     return HttpResponseRedirect('/bank_accounts/' + str(ba_id))
                 elif int(request.POST['money']) > 10000:
-                    request.session['error'] = "Введена сума має бути більше 10000!"
+                    request.session['error'] = "Введена сума має бути не більше 10000!"
                     return HttpResponseRedirect('/bank_accounts/' + str(ba_id))
                 else:
                     ba.balance += decimal.Decimal(float(request.POST['money']))
@@ -348,7 +367,7 @@ def add_money(request, ba_id):
                     request.session['success'] = 'Кошти успішно нараховано на рахунок'
                     return HttpResponseRedirect('/bank_accounts/' + str(ba_id))
             except ValueError:
-                request.session['error'] = "Не треба ламати сайт!"
+                request.session['error'] = "Введено некоректні дані"
                 return HttpResponseRedirect('/bank_accounts/' + str(ba_id))
         else:
             try:
@@ -366,7 +385,57 @@ def add_money(request, ba_id):
             return render(request, 'add_money.html', context)
     else:
         request.session['error'] = 'Ви не є власником цього рахунку!'
-        return HttpResponseRedirect('../')
+        return HttpResponseRedirect('/')
+
+
+@login_required(redirect_field_name=None)
+def withdraw_money(request, ba_id):
+    user = request.user
+    try:
+        ba = BankAccount.objects.get(id=ba_id)
+    except BankAccount.DoesNotExist:
+        request.session['error'] = 'Такого рахунку не існує!'
+        return HttpResponseRedirect('/')
+
+    if ba.balance < 50:
+        request.session['error'] = "Недостатньо коштів на рахунку!"
+        return HttpResponseRedirect('/bank_accounts/' + str(ba_id))
+
+    if user.email == ba.email:
+        if request.method == 'POST':
+            try:
+                if int(request.POST['money']) < 0:
+                    request.session['error'] = "Введена сума має бути додатньою!"
+                    return HttpResponseRedirect('/bank_accounts/' + str(ba_id))
+                elif int(request.POST['money']) > float(ba.balance):
+                    request.session['error'] = "Недостатньо коштів на рахунку!"
+                    return HttpResponseRedirect('/bank_accounts/' + str(ba_id))
+                else:
+                    ba.balance -= decimal.Decimal(float(request.POST['money']))
+                    ba.save()
+                    request.session['success'] = 'Кошти успішно знято'
+                    return HttpResponseRedirect('/bank_accounts/' + str(ba_id))
+            except ValueError:
+                request.session['error'] = "Введено некоректні дані"
+                return HttpResponseRedirect('/bank_accounts/' + str(ba_id))
+        else:
+            try:
+                error = request.session['error']
+                del request.session['error']
+            except KeyError:
+                error = None
+            try:
+                success = request.session['success']
+                del request.session['success']
+            except KeyError:
+                success = None
+
+            context = {'error': error, 'success': success, 'ba_title': ba.title, 'ba_id': ba_id,
+                       'max_money': int(ba.balance - (ba.balance % 100))}
+            return render(request, 'withdraw_money.html', context)
+    else:
+        request.session['error'] = 'Ви не є власником цього рахунку!'
+        return HttpResponseRedirect('/')
 
 
 @login_required(redirect_field_name=None)
@@ -376,7 +445,7 @@ def edit_ba(request, ba_id):
         ba = BankAccount.objects.get(id=ba_id)
     except BankAccount.DoesNotExist:
         request.session['error'] = 'Такого рахунку не існує!'
-        return HttpResponseRedirect('../')
+        return HttpResponseRedirect('/')
 
     if user.email == ba.email:
         if request.method == 'POST':
@@ -404,4 +473,258 @@ def edit_ba(request, ba_id):
             return render(request, 'edit_ba.html', context)
     else:
         request.session['error'] = 'Ви не є власником цього рахунку!'
-        return HttpResponseRedirect('../')
+        return HttpResponseRedirect('/')
+
+
+@login_required(redirect_field_name=None)
+def transfer_money(request, card_id):
+    user = request.user
+    try:
+        card = Card.objects.get(id=card_id)
+    except Card.DoesNotExist:
+        request.session['error'] = 'Такої картки не існує!'
+        return HttpResponseRedirect('/')
+
+    ba = BankAccount.objects.get(id=card.bank_account)
+
+    if ba.balance < 10:
+        request.session['error'] = "Недостатньо коштів на рахунку!"
+        return HttpResponseRedirect('/cards/' + str(card_id))
+
+    if user.email == card.cardholder_email:
+        if request.method == 'POST':
+            if 'confirm' in request.POST.keys():
+                try:
+                    recipient_ba = BankAccount.objects.get(id=request.session['recipient_ba'])
+
+                except BankAccount.DoesNotExist:
+                    request.session['error'] = 'Помилка переказу'
+                    return HttpResponseRedirect('/')
+
+                ba.balance -= decimal.Decimal(float(request.session['sender_money']))
+                ba.save()
+
+                recipient_ba.balance += decimal.Decimal(float(request.session['receiver_money']))
+                recipient_ba.save()
+
+                transaction = Transaction.objects.create(sender_bank_account=ba.iban,
+                                                         comment=request.session['comment'],
+                                                         receiver_bank_account=recipient_ba.iban,
+                                                         receiver_money=float(request.session['receiver_money']),
+                                                         sender_money=float(request.session['sender_money']))
+
+                del request.session['receiver_money']
+                del request.session['sender_money']
+                del request.session['comment']
+                request.session['success'] = 'Кошти успішно знято'
+                return HttpResponseRedirect('/cards/' + str(card.id))
+            else:
+                try:
+                    recipient_card = Card.objects.get(card_number=request.POST['recipient_card'].replace(' ', ''))
+                except Card.DoesNotExist:
+                    request.session['error'] = 'Такої картки не існує!'
+                    return HttpResponseRedirect(f'../transfer_money/{card_id}')
+
+                recipient_ba = BankAccount.objects.get(id=recipient_card.bank_account)
+
+                if ba.iban == recipient_ba.iban:
+                    request.session['error'] = "Не можна переказати кошти на картку прив'язану до цього ж рахунку"
+                    return HttpResponseRedirect('/cards/' + str(card.id))
+
+                try:
+                    if int(request.POST['money']) < 0:
+                        request.session['error'] = "Введена сума має бути додатньою!"
+                        return HttpResponseRedirect('/transfer_money/' + str(card.id))
+                    elif int(request.POST['money']) > float(ba.balance):
+                        request.session['error'] = "Недостатньо коштів на рахунку!"
+                        return HttpResponseRedirect('/transfer_money/' + str(card.id))
+                    else:
+                        request.session['sender_money'] = request.POST['money']
+                        if ba.currency == recipient_ba.currency:
+                            request.session['receiver_money'] = request.POST['money']
+                        else:
+                            request.session['receiver_money'] = round(requests.get(f"https://api.exchangerate.host"
+                                                                                   f"/convert?from={ba.currency}"
+                                                                                   f"&to={recipient_ba.currency}"
+                                                                                   f"&amount={request.POST['money']}")
+                                                                      .json()['result'], 2)
+
+                        request.session['comment'] = request.POST['comment']
+                        request.session['recipient_ba'] = recipient_card.bank_account
+
+                        return render(request, 'transfer_money_confirm.html',
+                                      {'recipient': {'full_name': f"{recipient_card.cardholder_name} "
+                                                                  f"{recipient_card.cardholder_surname}",
+                                                     'iban': recipient_ba.beautiful_iban(),
+                                                     'card': recipient_card.beautiful_number(),
+                                                     'currency': recipient_ba.currency},
+                                       'sender': {'full_name': f"{card.cardholder_name} "
+                                                               f"{card.cardholder_surname}",
+                                                  'iban': ba.beautiful_iban(),
+                                                  'card': card.beautiful_number(),
+                                                  'currency': ba.currency},
+                                       'card_id': card_id,
+                                       'receiver_money': request.session['receiver_money'],
+                                       'sender_money': request.session['sender_money'],
+                                       'msg': request.session['comment']})
+                except ValueError:
+                    request.session['error'] = "Введено некоректні дані"
+                    return HttpResponseRedirect('/transfer_money/' + str(card.id))
+        else:
+            try:
+                error = request.session['error']
+                del request.session['error']
+            except KeyError:
+                error = None
+            try:
+                success = request.session['success']
+                del request.session['success']
+            except KeyError:
+                success = None
+            context = {'error': error, 'success': success, 'card_title': card.title, 'card_id': card_id,
+                       'max_money': int(ba.balance - (ba.balance % 1)),
+                       'step': 10}
+            return render(request, 'transfer_money.html', context)
+    else:
+        request.session['error'] = 'Ви не є власником цього рахунку!'
+        return HttpResponseRedirect('/')
+
+
+@login_required(redirect_field_name=None)
+def exchange_rate(request):
+    current_date = datetime.date.today()
+    if request.method == 'POST':
+        inputted_date = request.POST['date'].split('-')
+        date = datetime.date(year=int(inputted_date[0]), month=int(inputted_date[1]), day=int(inputted_date[2]))
+        currency = request.POST['currency']
+        form = ExchangeRateForm(request.POST)
+    else:
+        date = current_date
+        currency = 'UAH'
+        form = ExchangeRateForm()
+
+    if current_date >= date >= datetime.date(year=current_date.year-4, month=current_date.month, day=current_date.day):
+        try:
+            er = ExchangeRate.objects.get(date=date).rate
+        except ExchangeRate.DoesNotExist:
+            er = requests.get(f'https://api.exchangerate.host/{date.strftime("%Y-%m-%d")}?base=UAH').json()['rates']
+            er_created = ExchangeRate(date=date, rate=er)
+            er_created.save()
+    else:
+        request.session['error'] = 'Зберігаються дані курсів валют тільки за 4 останні роки'
+        er = None
+
+    try:
+        error = request.session['error']
+        del request.session['error']
+    except KeyError:
+        error = None
+    try:
+        success = request.session['success']
+        del request.session['success']
+    except KeyError:
+        success = None
+
+    return render(request, 'exchange_rate.html', {'rate': round(er[currency], 3), 'date': date, 'error': error, 'success': success,
+                                                  'form': form,
+                                                  'date_input': {'value': date.strftime('%Y-%m-%d'),
+                                                                 'min': datetime.date(year=current_date.year-4,
+                                                                                      month=current_date.month,
+                                                                                      day=current_date.day).strftime('%Y-%m-%d'),
+                                                                 'max': current_date.strftime('%Y-%m-%d')}})
+
+
+def period_exchange_rate(request):
+    if request.method == 'POST':
+        period = request.POST['period']
+        days = 1 if period == 'day' else 7 if period == 'week' else 30
+
+        form = ExchangeRateForm()
+
+        current_date = datetime.date.today()
+
+        date = current_date - datetime.timedelta(days=days-1)
+        ers = []
+        while date <= current_date:
+            try:
+                er = ExchangeRate.objects.get(date=date).rate
+            except ExchangeRate.DoesNotExist:
+                er = requests.get(f'https://api.exchangerate.host/{date.strftime("%Y-%m-%d")}?base=UAH').json()[
+                    'rates']
+                er_created = ExchangeRate(date=date, rate=er)
+                er_created.save()
+            ers.append((er, date.strftime('%d.%m.%Y')))
+
+            date += datetime.timedelta(days=1)
+
+        return JsonResponse({'date': current_date.strftime('%Y-%m-%d'), 'ers': ers, 'currencyDropdown': form.render(form.template_name_p)
+                            .replace('<label for="id_currency">Currency:</label>', '')
+                            .replace('this.parentNode.submit()', f"changeRate('period', this.value)")})
+    else:
+        raise Http404
+
+
+@login_required(redirect_field_name=None)
+def transaction_page(request, transaction_id):
+    user = request.user
+    try:
+        transaction = Transaction.objects.get(id=transaction_id)
+    except Transaction.DoesNotExist:
+        return HttpResponseRedirect('/')
+
+    try:
+        sender_ba = BankAccount.objects.get(iban=transaction.sender_bank_account)
+    except BankAccount.DoesNotExist:
+        transaction.delete()
+        return HttpResponseRedirect('/')
+
+    try:
+        receiver_ba = BankAccount.objects.get(iban=transaction.receiver_bank_account)
+    except BankAccount.DoesNotExist:
+        transaction.delete()
+        return HttpResponseRedirect('/')
+
+    if user.email == sender_ba.email:
+        context = {'receiver': receiver_ba.surname + ' ' + receiver_ba.name + ' ' + receiver_ba.patronymic,
+                   'sender_money': transaction.sender_money, 'sender_currency': sender_ba.currency,
+                   'sender_iban': sender_ba.beautiful_iban(), 'receiver_iban': receiver_ba.beautiful_iban(),
+                   'msg': transaction.comment, 'outcome': True}
+
+    elif user.email == receiver_ba.email:
+        context = {'sender': sender_ba.surname + ' ' + sender_ba.name + ' ' + sender_ba.patronymic,
+                   'receiver_money': transaction.receiver_money, 'receiver_currency': receiver_ba.currency,
+                   'sender_iban': sender_ba.beautiful_iban(), 'receiver_iban': receiver_ba.beautiful_iban(),
+                   'msg': transaction.comment, 'income': True}
+
+    else:
+        raise Http404
+
+    return render(request, 'transaction.html', context)
+
+
+@login_required(redirect_field_name=None)
+def all_transactions(request):
+    def sort_transactions(element):
+        return element[0]
+
+    user = request.user
+
+    bas = BankAccount.objects.all().filter(email=user.email)
+
+    transactions = []
+
+    for ba in bas:
+        income_transactions = Transaction.objects.all().filter(receiver_bank_account=ba.iban, showing_to_receiver=True)
+        outcome_transactions = Transaction.objects.all().filter(sender_bank_account=ba.iban, showing_to_sender=True)
+        for income_transaction in income_transactions:
+            transactions.append(
+                [income_transaction.time, income_transaction.short_comment(), income_transaction.receiver_money,
+                 'income', income_transaction.id, ba.currency])
+        for outcome_transaction in outcome_transactions:
+            transactions.append(
+                [outcome_transaction.time, outcome_transaction.short_comment(), outcome_transaction.sender_money,
+                 'outcome', outcome_transaction.id, ba.currency])
+
+    transactions.sort(key=sort_transactions, reverse=True)
+
+    return render(request, 'all_transactions.html', {'transactions': transactions})
