@@ -683,8 +683,13 @@ def transaction_page(request, transaction_id):
     except BankAccount.DoesNotExist:
         transaction.delete()
         return HttpResponseRedirect('/')
+    if sender_ba.email == receiver_ba.email:
+        context = {'sender_money': transaction.sender_money, 'sender_currency': sender_ba.currency,
+                   'receiver_money': transaction.receiver_money, 'receiver_currency': receiver_ba.currency,
+                   'sender_iban': sender_ba.beautiful_iban(), 'receiver_iban': receiver_ba.beautiful_iban(),
+                   'msg': transaction.comment, 'in_account': True}
 
-    if user.email == sender_ba.email:
+    elif user.email == sender_ba.email:
         context = {'receiver': receiver_ba.surname + ' ' + receiver_ba.name + ' ' + receiver_ba.patronymic,
                    'sender_money': transaction.sender_money, 'sender_currency': sender_ba.currency,
                    'sender_iban': sender_ba.beautiful_iban(), 'receiver_iban': receiver_ba.beautiful_iban(),
@@ -705,7 +710,7 @@ def transaction_page(request, transaction_id):
 @login_required(redirect_field_name=None)
 def all_transactions(request):
     def sort_transactions(element):
-        return element[0]
+        return element['time']
 
     user = request.user
 
@@ -717,14 +722,44 @@ def all_transactions(request):
         income_transactions = Transaction.objects.all().filter(receiver_bank_account=ba.iban, showing_to_receiver=True)
         outcome_transactions = Transaction.objects.all().filter(sender_bank_account=ba.iban, showing_to_sender=True)
         for income_transaction in income_transactions:
-            transactions.append(
-                [income_transaction.time, income_transaction.short_comment(), income_transaction.receiver_money,
-                 'income', income_transaction.id, ba.currency])
-        for outcome_transaction in outcome_transactions:
-            transactions.append(
-                [outcome_transaction.time, outcome_transaction.short_comment(), outcome_transaction.sender_money,
-                 'outcome', outcome_transaction.id, ba.currency])
+            receiver = BankAccount.objects.get(iban=income_transaction.receiver_bank_account)
+            sender = BankAccount.objects.get(iban=income_transaction.sender_bank_account)
 
+            if receiver.email == sender.email:
+                transactions.append(
+                    {'time': income_transaction.time, 'comment': income_transaction.short_comment(),
+                     'money': income_transaction.receiver_money, 'type': 'in-acccount',
+                     'id': income_transaction.id, 'currency': ba.currency})
+            else:
+                transactions.append(
+                    {'time': income_transaction.time, 'comment': income_transaction.short_comment(),
+                     'money': income_transaction.receiver_money, 'type': 'income',
+                     'id': income_transaction.id, 'currency': ba.currency})
+        for outcome_transaction in outcome_transactions:
+            receiver = BankAccount.objects.get(iban=outcome_transaction.receiver_bank_account)
+            sender = BankAccount.objects.get(iban=outcome_transaction.sender_bank_account)
+
+            if not receiver.email == sender.email:
+                transactions.append(
+                    {'time': outcome_transaction.time, 'comment': outcome_transaction.short_comment(),
+                     'money': outcome_transaction.receiver_money, 'type': 'outcome',
+                     'id': outcome_transaction.id, 'currency': ba.currency})
     transactions.sort(key=sort_transactions, reverse=True)
 
     return render(request, 'all_transactions.html', {'transactions': transactions})
+
+
+@login_required(redirect_field_name=None)
+def settings(request):
+    user = User.objects.get(email=request.user.email)
+    if request.method == 'POST':
+        if request.POST['type'] == 'account':
+            user.first_name = request.POST['name']
+            user.last_name = request.POST['lastname']
+            user.patronymic = request.POST['patronymic']
+            user.save()
+        context = {}
+    else:
+        context = {}
+    context.update({'name': user.first_name, 'last_name': user.last_name, 'patronymic': user.patronymic, 'phone': user.phone_number})
+    return render(request, 'settings.html', context)

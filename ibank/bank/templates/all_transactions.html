@@ -15,14 +15,16 @@
             <tbody>
             {% if transactions %}
                 {% for transaction in transactions %}
-                    {% if transaction.3 == 'income' %}
-                    <tr class="table-success" style="height: 2rem" transaction-link="/transactions/{{ transaction.4 }}" onclick="window.location.href = this.getAttribute('transaction-link')">
+                    {% if transaction.type == 'income' %}
+                    <tr class="table-success" style="height: 2rem" transaction-link="/transactions/{{ transaction.id }}" onclick="window.location.href = this.getAttribute('transaction-link')">
+                    {% elif transaction.type == 'outcome' %}
+                    <tr class="table-danger" style="height: 2rem" transaction-link="/transactions/{{ transaction.id }}" onclick="window.location.href = this.getAttribute('transaction-link')">
                     {% else %}
-                    <tr class="table-danger" style="height: 2rem" transaction-link="/transactions/{{ transaction.4 }}" onclick="window.location.href = this.getAttribute('transaction-link')">
+                    <tr class="table-secondary" style="height: 2rem" transaction-link="/transactions/{{ transaction.id }}" onclick="window.location.href = this.getAttribute('transaction-link')">
                     {% endif %}
-                        <td style="word-wrap: anywhere">{{ transaction.0 }}</td>
-                        <td style="word-wrap: anywhere">{{ transaction.1 }}</td>
-                        <td class="text-end">{% if transaction.3 == 'income' %}+{% else %}-{% endif %}{{ transaction.2 }}{{ transaction.5 }}</td>
+                        <td style="word-wrap: anywhere">{{ transaction.time }}</td>
+                        <td style="word-wrap: anywhere">{{ transaction.comment }}</td>
+                        <td class="text-end">{% if transaction.type == 'income' %}+{% elif transaction.type == 'outcome'%}-{% endif %}{{ transaction.money }}{{ transaction.currency }}</td>
                     </tr>
                 {% endfor %}
             {% else %}

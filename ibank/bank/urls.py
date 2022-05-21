@@ -8,8 +8,9 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('exchange_rate/', views.exchange_rate, name='exchange-rate'),
     path('period_exchange_rate/', views.period_exchange_rate, name='period-er'),
+    path('settings/', views.settings, name='settings'),
     #path('history/', views.history, name='history'),
-    #path('settings/', views.settings, name='settings'),
+
 
     # Transactions
     path('transactions/<int:transaction_id>', views.transaction_page, name='transaction-page'),

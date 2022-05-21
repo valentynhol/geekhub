@@ -58,8 +58,8 @@
                 <div class="tab-content" style="height: 60vh">
                     <div class="tab-pane fade show active h-100" id="history-page" role="tabpanel">
                         <div class="row row-cols-1 row-cols-md-2">
-                            <div class="col">
-                                <form method="post" class="mx-auto mx-md-0 mt-5">
+                            <div class="col my-auto">
+                                <form method="post" class="mx-auto me-md-0">
                                     {% csrf_token %}
                                     <div class="input-group mb-1">
                                         <input type="date" name="date" value="{{ date_input.value }}" min="{{ date_input.min }}" max="{{ date_input.value }}" id="date-input">
@@ -68,7 +68,7 @@
                                     {{ form.currency }}
                                 </form>
                             </div>
-                            <div class="col my-auto text-md-end text-center">
+                            <div class="col my-auto text-md-start text-center">
                                 <h1 style="font-size: 5rem" class="my-auto">{{ rate }}</h1>
                             </div>
                         </div>
@@ -100,7 +100,7 @@
                     if (!document.getElementById('last-day-rate')){
                         document.getElementById('last-day-page').innerHTML = sessionStorage.getItem('currency').replace('period', 'day').replace('id_currency', 'last-day-dropdown') + '<p class="text-center" id="last-day-rate" style="font-size: 5rem"></p>';
                     }
-                    document.getElementById('last-' + period + '-rate').innerText = JSON.parse(sessionStorage.getItem(period + 'Rates'))['exchangeRates'][0][0][currency].toFixed(3);
+                    document.getElementById('last-' + period + '-rate').innerText = (1 / JSON.parse(sessionStorage.getItem(period + 'Rates'))['exchangeRates'][0][0][currency]).toFixed(3);
                 } else {
                     if (!document.getElementById('last-' + period + '-chart')) {
                         if (!document.getElementById('last-' + period + '-dropdown')){
@@ -125,7 +125,7 @@
 
                     for (let rate of rates) {
                         dateLabels.push(rate[1]);
-                        exchangeRates.push(rate[0][currency]);
+                        exchangeRates.push((1/rate[0][currency]).toFixed(3));
                     }
                     if (period === 'week') {
                         const weekChart = createChart(dateLabels, exchangeRates, period);

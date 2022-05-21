@@ -14,6 +14,12 @@
         <p>Рахунок відправника: {{ sender_iban }}</p>
         <p>Рахунок, на який надійшли кошти: {{ receiver_iban }}</p>
         <p>Коментар відправника: {{ msg }}</p>
+    {% elif in_account %}
+        <h2>Перераховано кошти на інший рахунок</h2>
+        <p>Рахунок, з якого перераховано: {{ sender_iban }}</p>
+        <p>Рахунок, на який перераховано: {{ receiver_iban }}</p>
+        <p>Відправлена сума: {{ sender_money }}{{ sender_currency }}</p>
+        <p>Отримана сума: {{ receiver_money }}{{ receiver_currency }}</p>
     {% else %}
         <h2>Відправлено <span class="text-danger">{{ sender_money }}{{ sender_currency }}</span> до {{ receiver }}</h2>
         <p>Рахунок, з якого відправлено кошти: {{ sender_iban }}</p>

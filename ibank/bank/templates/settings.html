@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Зміна рахунку: {{ ba_title }}{% endblock %}
+
+{% block style %}
+            [name=name]:hover, [name=lastname]:hover, [name=patronymic]:hover{
+                border: 2px solid black;
+                border-radius: 7px;
+            }
+
+            [name=name]:focus, [name=lastname]:focus, [name=patronymic]:focus{
+                border: 2px solid black;
+                border-radius: 7px;
+            }
+
+            [name=name], [name=lastname], [name=patronymic]{
+                border: 1px solid grey;
+                border-radius: 7px;
+                height: 40px;
+                width: 100%;
+                padding: 8px;
+            }
+
+            form{
+                min-width: 230px;
+                max-width: 300px;
+                width: 25%;
+            }
+            label{
+                font-size: 0.75rem;
+            }
+{% endblock %}
+
+{% block page %}
+<h1 class="border-bottom">Акаунт</h1>
+<form action="" method="post" class="mx-auto">
+    {% csrf_token %}
+    <input type="hidden" name="type" value="account">
+    <label for="name" class="text-disabled">Ім'я</label>
+    <input type="text" name="name" id="name" value="{{ name }}" class="mb-2">
+    <label for="lastname" class="text-disabled">Прізвище</label>
+    <input type="text" name="lastname" id="lastname" value="{{ last_name }}" class="mb-2">
+    <label for="patronymic" class="text-disabled">По-батькові</label>
+    <input type="text" name="patronymic" id="patronymic" value="{{ patronymic }}" class="mb-2">
+    <input type="submit" value="Змінити" style="height: 40px; float: right" class="btn btn-success mt-3 shadow">
+</form>
+{% endblock %}
