@@ -1,5 +1,4 @@
 from django.db import models
-from django.core.mail import send_mail
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.utils.translation import gettext_lazy as _
@@ -15,6 +14,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     patronymic = models.CharField(_('по-батькові'), max_length=30, blank=True)
     date_joined = models.DateTimeField(_('дата приєднання'), auto_now_add=True, editable=True)
     is_staff = models.BooleanField(_('суперкористувач'), default=False)
+    is_active = models.BooleanField(_('активний'), default=True)
+    verification_code = models.CharField(_('код підтвердження'), null=True, default=None, max_length=128)
 
     objects = UserManager()
 
@@ -24,9 +25,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = _('user')
         verbose_name_plural = _('users')
-
-    def email_user(self, subject, message, from_email=None, **kwargs):
-        send_mail(subject, message, from_email, [self.email], **kwargs)
 
 
 class Card(models.Model):

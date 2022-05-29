@@ -7,10 +7,22 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.db.utils import IntegrityError
 from django.contrib.auth import authenticate, login, logout
-from django.http import HttpResponseRedirect, JsonResponse, Http404
+from django.http import HttpResponseRedirect, JsonResponse, Http404, HttpResponse
+from django.core.mail import send_mail
+from django.template.loader import get_template
+from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth import update_session_auth_hash
 
 from .forms import LogInForm, SignUpForm, CardForm, BankAccountForm, ExchangeRateForm
 from .models import Card, BankAccount, User, ExchangeRate, Transaction
+
+
+def __send_email(email, file, context, title):
+    send_mail(
+        title,
+        get_template(f'mail/{file}.txt').render(context), 'ibank.gh.noreply@gmail.com', [email],
+        html_message=get_template(f'mail/{file}.html').render(context)
+    )
 
 
 def __generate_card_num(payment_system):
@@ -57,19 +69,42 @@ def __generate_iban(ba_type):
     return iban
 
 
+def __generate_verification_code():
+    return ''.join([random.choice('1 2 3 4 5 6 7 8 9 0 A B C D E F G H I G '
+                                  'K L M N O P Q R S T U V W X Y Z'.split(' ')) for i in range(6)])
+
+
 def user_signup(request):
+    if not str(request.user) == 'AnonymousUser':
+        return HttpResponseRedirect('/')
+
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if request.POST['password1'] == request.POST['password2']:
+            try:
+                user = User.objects.get(email=request.POST['email'])
+                if not user.is_active and user.date_joined < (datetime.datetime.now() - datetime.timedelta(days=1)).astimezone(user.date_joined.tzinfo):
+                    user.delete()
+            except User.DoesNotExist:
+                pass
+
             try:
                 user = User.objects.create_user(email=request.POST['email'],
                                                 password=request.POST['password1'],
                                                 first_name=request.POST['first_name'],
                                                 last_name=request.POST['last_name'],
                                                 patronymic=request.POST['patronymic'],
-                                                phone_number=request.POST['phone_number'])
-                login(request, user)
-                return HttpResponseRedirect('/')
+                                                phone_number=request.POST['phone_number'],
+                                                is_active=False)
+                if user:
+                    verification_code = __generate_verification_code()
+                    user.verification_code = make_password(verification_code)
+                    user.save()
+                    __send_email(user.email, 'email_verification',
+                                 {'code': verification_code,
+                                  'name': f'{user.first_name} {user.last_name}',
+                                  'link': f'https://ibank-gh.herokuapp.com/email_verification/{user.id}/{verification_code}'}, 'Активація акаунту')
+                return render(request, 'email_verification.html', {'user_id': user.id})
             except IntegrityError as signup_error:
                 request.session['error'] = \
                     'Ця електронна адреса вже використовується' \
@@ -91,14 +126,31 @@ def user_signup(request):
 
 
 def user_login(request):
+    if not str(request.user) == 'AnonymousUser':
+        return HttpResponseRedirect('/')
+
     if request.method == 'POST':
         form = LogInForm(request.POST)
-        user = authenticate(request, email=request.POST['email'], password=request.POST['password'])
-        if user:
-            login(request, user)
-            return HttpResponseRedirect('/')
-        else:
-            request.session['error'] = 'Неправильна електронна адреса або пароль!'
+        try:
+            user = User.objects.get(email=request.POST['email'])
+            if not user.is_active:
+                if user.date_joined < (datetime.datetime.now() - datetime.timedelta(days=1)).astimezone(user.date_joined.tzinfo):
+                    user.delete()
+                    request.session['error'] = 'Неправильна електронна адреса або пароль!'
+                else:
+                    request.session['error'] = 'Спочатку активуйте акаунт'
+            else:
+                form = LogInForm(request.POST)
+                user_authenticated = authenticate(request, email=request.POST['email'],
+                                                  password=request.POST['password'])
+
+                if user_authenticated:
+                    login(request, user_authenticated)
+                    return HttpResponseRedirect('/')
+                else:
+                    request.session['error'] = 'Неправильна електронна адреса або пароль!'
+        except User.DoesNotExist:
+            request.session['error'] = 'Неправильна електронна адреса!'
     else:
         form = LogInForm()
 
@@ -751,15 +803,71 @@ def all_transactions(request):
 
 @login_required(redirect_field_name=None)
 def settings(request):
-    user = User.objects.get(email=request.user.email)
+    user = request.user
     if request.method == 'POST':
-        if request.POST['type'] == 'account':
+        context = {}
+        if request.POST['type'] == 'personal_info':
             user.first_name = request.POST['name']
             user.last_name = request.POST['lastname']
             user.patronymic = request.POST['patronymic']
             user.save()
-        context = {}
+            context = {'success': 'ПІБ успішно змінено'}
+        elif request.POST['type'] == 'change_password':
+            if check_password(request.POST['current_password'], user.password):
+                if request.POST['new_password1'] == request.POST['new_password2']:
+                    user.set_password(request.POST['new_password1'])
+                    update_session_auth_hash(request, request.user)
+                    user.save()
+                    context = {'success': 'Пароль успішно змінено'}
+                else:
+                    context = {'error': 'Нові паролі не збігаються!'}
+            else:
+                context = {'error': 'Неправильний пароль!'}
+
+
     else:
         context = {}
     context.update({'name': user.first_name, 'last_name': user.last_name, 'patronymic': user.patronymic, 'phone': user.phone_number})
     return render(request, 'settings.html', context)
+
+
+def email_verification(request, user_id, verification_code):
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        raise Http404
+    if not user.is_active and user.date_joined < (datetime.datetime.now() - datetime.timedelta(days=1)).astimezone(user.date_joined.tzinfo):
+        user.delete()
+
+    elif not user.is_active and check_password(verification_code, user.verification_code):
+        user.is_active = True
+        user.verification_code = None
+        user.save()
+        return render(request, 'email_verification_successful.html', {'email': user.email})
+
+    raise Http404
+
+
+def email_verification_with_code(request):
+    if request.method == 'POST':
+        try:
+            user = User.objects.get(id=request.POST['user_id'])
+        except User.DoesNotExist:
+            return HttpResponse('user_does_not_exist')
+
+        if not user.is_active and user.date_joined < (datetime.datetime.now() - datetime.timedelta(days=1)).astimezone(user.date_joined.tzinfo):
+            user.delete()
+            return HttpResponse('code_has_expired')
+
+        elif not user.is_active and check_password(request.POST['verification_code'], user.verification_code):
+            user.is_active = True
+            user.verification_code = None
+            user.save()
+            return HttpResponse('verified')
+
+        elif user.is_active:
+            return HttpResponse('already_verified')
+
+        return HttpResponse('incorrect_code')
+    else:
+        raise Http404

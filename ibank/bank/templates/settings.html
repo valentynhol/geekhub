@@ -1,19 +1,14 @@
 {% extends 'base.html' %}
 
-{% block page_title %}Зміна рахунку: {{ ba_title }}{% endblock %}
+{% block page_title %}Налаштування{% endblock %}
 
 {% block style %}
-            [name=name]:hover, [name=lastname]:hover, [name=patronymic]:hover{
+            #name:hover, #lastname:hover, #patronymic:hover, #new_password1:hover, #new_password2:hover, #current_password:hover{
                 border: 2px solid black;
                 border-radius: 7px;
             }
 
-            [name=name]:focus, [name=lastname]:focus, [name=patronymic]:focus{
-                border: 2px solid black;
-                border-radius: 7px;
-            }
-
-            [name=name], [name=lastname], [name=patronymic]{
+            #name, #lastname, #patronymic {
                 border: 1px solid grey;
                 border-radius: 7px;
                 height: 40px;
@@ -21,27 +16,81 @@
                 padding: 8px;
             }
 
+            .password-container input {
+                border: 1px solid grey;
+                border-radius: 7px;
+                height: 40px;
+                padding: 8px;
+                flex: 1 1 auto;
+            }
+
+            .password-container {
+                width: 100%;
+            }
+
             form{
                 min-width: 230px;
                 max-width: 300px;
                 width: 25%;
             }
+
             label{
                 font-size: 0.75rem;
             }
+
 {% endblock %}
 
 {% block page %}
 <h1 class="border-bottom">Акаунт</h1>
-<form action="" method="post" class="mx-auto">
-    {% csrf_token %}
-    <input type="hidden" name="type" value="account">
-    <label for="name" class="text-disabled">Ім'я</label>
-    <input type="text" name="name" id="name" value="{{ name }}" class="mb-2">
-    <label for="lastname" class="text-disabled">Прізвище</label>
-    <input type="text" name="lastname" id="lastname" value="{{ last_name }}" class="mb-2">
-    <label for="patronymic" class="text-disabled">По-батькові</label>
-    <input type="text" name="patronymic" id="patronymic" value="{{ patronymic }}" class="mb-2">
-    <input type="submit" value="Змінити" style="height: 40px; float: right" class="btn btn-success mt-3 shadow">
-</form>
+<h3 class="text-center pt-4">Особиста інформація</h3>
+    <form action="" method="post" class="mx-auto">
+        {% csrf_token %}
+        <input type="hidden" name="type" value="personal_info">
+        <label for="name" class="text-disabled">Ім'я</label>
+        <input type="text" name="name" id="name" value="{{ name }}" class="mb-2">
+        <label for="lastname" class="text-disabled">Прізвище</label>
+        <input type="text" name="lastname" id="lastname" value="{{ last_name }}" class="mb-2">
+        <label for="patronymic" class="text-disabled">По-батькові</label>
+        <input type="text" name="patronymic" id="patronymic" value="{{ patronymic }}" class="mb-2">
+        <input type="submit" value="Змінити" style="height: 40px; display: block; margin-left: auto" class="btn btn-success mt-3 shadow">
+    </form>
+
+<h3 class="text-center pt-4">Зміна паролю</h3>
+    <form action="" method="post" class="mx-auto">
+        {% csrf_token %}
+        <input type="hidden" name="type" value="change_password">
+        <label for="currentPassword" class="text-disabled">Старий пароль</label>
+        <div class="input-group row row-cols-2 flex-nowrap mb-2 m-0 password-container">
+            <input type="password" name="current_password" id="currentPassword">
+            <button class="btn btn-outline-dark col-auto" type="button" onclick="showPassword('currentPassword', this.id)" id="currentPasswordBtn"><i class="bi-eye-fill"></i></button>
+        </div>
+        <label for="newPassword1" class="text-disabled">Новий пароль</label>
+        <div class="input-group row row-cols-2 flex-nowrap mb-2 m-0 password-container">
+            <input type="password" name="new_password1" id="newPassword1">
+            <button class="btn btn-outline-dark col-auto" type="button" onclick="showPassword('newPassword1', this.id)" id="newPassword1btn"><i class="bi-eye-fill"></i></button>
+        </div>
+        <label for="newPassword2" class="text-disabled">Новий пароль (ще раз)</label>
+        <div class="input-group row row-cols-2 flex-nowrap mb-2 m-0 password-container">
+            <input class="" type="password" name="new_password2" id="newPassword2">
+            <button class="btn btn-outline-dark col-auto" type="button" onclick="showPassword('newPassword2', this.id)" id="newPassword2btn"><i class="bi-eye-fill"></i></button>
+        </div>
+        <input type="submit" value="Змінити" style="height: 40px; display: block; margin-left: auto" class="btn btn-success mt-3 shadow">
+    </form>
+{% endblock %}
+{% block script %}
+    <script>
+        function showPassword(inputId, buttonId){
+            document.getElementById(inputId).setAttribute('type', 'text');
+            let btn = document.getElementById(buttonId);
+            btn.setAttribute('onclick', 'hidePassword("' + inputId + '", this.id)');
+            btn.innerHTML = '<i class="bi-eye-slash-fill"></i>';
+        }
+
+        function hidePassword(inputId, buttonId){
+            document.getElementById(inputId).setAttribute('type', 'password');
+            let btn = document.getElementById(buttonId);
+            btn.setAttribute('onclick', 'showPassword("' + inputId + '", this.id)');
+            btn.innerHTML = '<i class="bi-eye-fill"></i>';
+        }
+    </script>
 {% endblock %}
