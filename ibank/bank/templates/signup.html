@@ -21,11 +21,20 @@
                 border-radius: 7px;
             }
 
-            [name=email], [name=password1], [name=password2], [name=first_name],  [name=last_name], [name=patronymic], [name=phone_number]{
+            [name=email], [name=first_name],  [name=last_name], [name=patronymic], [name=phone_number]{
                 border: 1px solid grey;
                 border-radius: 7px;
                 height: 40px;
                 padding: 8px;
+                width: 100%;
+            }
+
+            .password-container input {
+                border: 1px solid grey;
+                border-radius: 7px;
+                height: 40px;
+                padding: 8px;
+                flex: 1 1 auto;
             }
 
             .alert{
@@ -46,30 +55,92 @@
             body{
                 height: 100vh;
                 display:flex;
-                justify-content:center;
                 align-items:center;
+            }
+
+            form {
+                width: 95%;
+                max-width: 300px;
+            }
+
+            #loginLink::before{
+                content: '';
+                background-color: #000;
+                transition: 0.3s ease-in-out;
+                position: absolute;
+                left: 0;
+                bottom: 0;
+                width: 100%;
+                height: 2px;
+                z-index: -1;
+            }
+
+            #loginLink {
+                text-decoration: none;
+                transition: 0.3s ease-in-out;
+                color: #212529;
+                position: relative;
+                display: inline-block;
+            }
+
+            #loginLink:hover{
+                color: #f8f9fa;
+                cursor: pointer;
+            }
+
+            #loginLink:hover::before{
+                height: 100%;
             }
         </style>
     </head>
     <body>
-        <div>
+        <div class="m-auto py-4">
             <form action="" method="post" class="text-center">
             {% csrf_token %}
                 <h1 class="text-dark">Створення акаунту:</h1>
-                {{ form.first_name }}<br>
-                {{ form.last_name }}<br>
-                {{ form.patronymic }}<br>
-                {{ form.email }}<br>
-                {{ form.phone_number }}<br>
-                {{ form.password1 }}<br>
-                {{ form.password2 }}<br>
+                {{ form.first_name }}
+                {{ form.last_name }}
+                {{ form.patronymic }}
+                {{ form.email }}
+                {{ form.phone_number }}
+
+                <div class="input-group row row-cols-2 flex-nowrap m-1 password-container">
+                    {{ form.password1 }}
+                    <button class="btn btn-outline-dark col-auto" type="button" onclick="showPassword('password1', this.id)" id="password1btn"><i class="bi-eye-fill"></i></button>
+                </div>
+
+                <div class="input-group row row-cols-2 flex-nowrap m-1 password-container">
+                    {{ form.password2 }}
+                    <button class="btn btn-outline-dark col-auto" type="button" onclick="showPassword('password2', this.id)" id="password2btn"><i class="bi-eye-fill"></i></button>
+                </div>
+
                 <input type="submit" value="Створити" style="height: 40px" class="btn btn-dark mt-3 shadow">
             </form>
-            <div class="text-center mt-5">У мене вже є акаунт, <a href="/login">увійти</a></div>
+
+            <div class="text-center mt-5">У мене вже є акаунт, <a href="/login" id="loginLink"><strong class="m-1">увійти</strong></a></div>
+
             {% if error %}
-                <div class="alert alert-danger m-auto"><i class="bi bi-exclamation-triangle-fill" role="img"></i>{{ error }}</div>
+                <div class="alert alert-danger m-auto mt-4"><i class="bi bi-exclamation-triangle-fill" role="img"></i>{{ error }}</div>
             {% endif %}
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
         </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+
+        <script>
+            function showPassword(inputId, buttonId){
+                document.getElementById(inputId).setAttribute('type', 'text');
+                let btn = document.getElementById(buttonId);
+                btn.setAttribute('onclick', 'hidePassword("' + inputId + '", this.id)');
+                btn.innerHTML = '<i class="bi-eye-slash-fill"></i>';
+            }
+
+            function hidePassword(inputId, buttonId){
+                document.getElementById(inputId).setAttribute('type', 'password');
+                let btn = document.getElementById(buttonId);
+                btn.setAttribute('onclick', 'showPassword("' + inputId + '", this.id)');
+                btn.innerHTML = '<i class="bi-eye-fill"></i>';
+            }
+        </script>
+
     </body>
 </html>

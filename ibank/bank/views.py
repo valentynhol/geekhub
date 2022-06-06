@@ -7,10 +7,22 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.db.utils import IntegrityError
 from django.contrib.auth import authenticate, login, logout
-from django.http import HttpResponseRedirect, JsonResponse, Http404
+from django.http import HttpResponseRedirect, JsonResponse, Http404, HttpResponse
+from django.core.mail import send_mail
+from django.template.loader import get_template
+from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth import update_session_auth_hash
 
 from .forms import LogInForm, SignUpForm, CardForm, BankAccountForm, ExchangeRateForm
 from .models import Card, BankAccount, User, ExchangeRate, Transaction
+
+
+def __send_email(email, file, context, title):
+    send_mail(
+        title,
+        get_template(f'mail/{file}.txt').render(context), 'ibank.gh.noreply@gmail.com', [email],
+        html_message=get_template(f'mail/{file}.html').render(context)
+    )
 
 
 def __generate_card_num(payment_system):
@@ -57,19 +69,45 @@ def __generate_iban(ba_type):
     return iban
 
 
+def __generate_code(length):
+    return ''.join([random.choice('1 2 3 4 5 6 7 8 9 0 A B C D E F G H I G '
+                                  'K L M N O P Q R S T U V W X Y Z'.split(' ')) for _ in range(length)])
+
+
 def user_signup(request):
+    if not str(request.user) == 'AnonymousUser':
+        return HttpResponseRedirect('/')
+
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if request.POST['password1'] == request.POST['password2']:
+            try:
+                user = User.objects.get(email=request.POST['email'])
+                if not user.is_active and user.date_joined < (datetime.datetime.now() - datetime.timedelta(days=1))\
+                        .astimezone(user.date_joined.tzinfo):
+                    user.delete()
+            except User.DoesNotExist:
+                pass
+
             try:
                 user = User.objects.create_user(email=request.POST['email'],
                                                 password=request.POST['password1'],
                                                 first_name=request.POST['first_name'],
                                                 last_name=request.POST['last_name'],
                                                 patronymic=request.POST['patronymic'],
-                                                phone_number=request.POST['phone_number'])
-                login(request, user)
-                return HttpResponseRedirect('/')
+                                                phone_number=request.POST['phone_number'],
+                                                is_active=False)
+                if user:
+                    verification_code = __generate_code(6)
+                    user.verification_code = make_password(verification_code)
+                    user.save()
+                    __send_email(user.email, 'email_verification',
+                                 {'code': verification_code,
+                                  'name': f'{user.first_name} {user.last_name}',
+                                  'link': f'https://ibank-gh.herokuapp.com/email_verification/'
+                                          f'{user.id}/{verification_code}'}, 'Активація акаунту')
+
+                return render(request, 'email_verification.html', {'user_id': user.id})
             except IntegrityError as signup_error:
                 request.session['error'] = \
                     'Ця електронна адреса вже використовується' \
@@ -91,14 +129,55 @@ def user_signup(request):
 
 
 def user_login(request):
+    if not str(request.user) == 'AnonymousUser':
+        return HttpResponseRedirect('/')
+
     if request.method == 'POST':
-        form = LogInForm(request.POST)
-        user = authenticate(request, email=request.POST['email'], password=request.POST['password'])
-        if user:
-            login(request, user)
-            return HttpResponseRedirect('/')
+        if 'second_step' in request.POST.keys():
+            user = User.objects.get(id=request.POST['user_id'])
+
+            if check_password(request.POST['code'], user.second_step_code):
+                login(request, user)
+
+                user.second_step_code = None
+                user.save()
+
+                return HttpResponse('logged_in')
+
+            return HttpResponse('incorrect_code')
         else:
-            request.session['error'] = 'Неправильна електронна адреса або пароль!'
+            form = LogInForm(request.POST)
+            try:
+                user = User.objects.get(email=request.POST['email'])
+                if not user.is_active:
+                    if user.date_joined < (datetime.datetime.now() - datetime.timedelta(days=1))\
+                            .astimezone(user.date_joined.tzinfo):
+                        user.delete()
+                        request.session['error'] = 'Неправильна електронна адреса або пароль!'
+                    else:
+                        request.session['error'] = 'Спочатку активуйте акаунт'
+                else:
+                    form = LogInForm(request.POST)
+                    user_authenticated = authenticate(request, email=request.POST['email'],
+                                                      password=request.POST['password'])
+
+                    if user_authenticated:
+                        if user.two_step_login:
+                            code = __generate_code(6)
+
+                            user.second_step_code = make_password(code)
+                            user.save()
+
+                            __send_email(user.email, 'second_step_login', {'code': code}, 'Підтвердження входу')
+
+                            return render(request, 'second_step_login.html', {'user_id': user.id})
+                        else:
+                            login(request, user_authenticated)
+                            return HttpResponseRedirect('/')
+                    else:
+                        request.session['error'] = 'Неправильна електронна адреса або пароль!'
+            except User.DoesNotExist:
+                request.session['error'] = 'Неправильна електронна адреса!'
     else:
         form = LogInForm()
 
@@ -131,7 +210,8 @@ def home(request):
                       'payment_system': card.payment_system, 'id': card.id})
     bas = []
     for ba in raw_bas:
-        bas.append({'title': ba.title, 'currency': ba.currency, 'iban': ba.beautiful_iban(), 'id': ba.id, 'balance': ba.balance})
+        bas.append({'title': ba.title, 'currency': ba.currency, 'iban': ba.beautiful_iban(), 'id': ba.id,
+                    'balance': ba.balance})
 
     try:
         error = request.session['error']
@@ -159,7 +239,7 @@ def create_card(request):
                                             day=datetime.date.today().day).strftime('%m/%y')
                 card = Card(title=request.POST['title'], color=request.POST['color'],
                             payment_system=request.POST['payment_system'],
-                            card_number=card_number, cvv=''.join([str(random.randint(1, 9)) for i in range(3)]),
+                            card_number=card_number, cvv=''.join([str(random.randint(1, 9)) for _ in range(3)]),
                             bank_account=request.POST['bank_account'], expiry_date=expiry_date,
                             cardholder_name=user.first_name, cardholder_surname=user.last_name,
                             cardholder_email=user.email)
@@ -251,10 +331,10 @@ def card_page(request, card_id):
             success = None
 
         context = {'error': error, 'success': success, 'balance': card_ba.balance,
-                   'card': {'number': card.beautiful_number(), 'title': card.title, 'bank_account': card_ba.beautiful_iban(),
-                            'ba_title': card_ba.title, 'color': card.color, 'payment_system': card.payment_system,
-                            'cardholder': f'{card.cardholder_surname} {card.cardholder_name}', 'cvv': card.cvv,
-                            'expiry_date': card.expiry_date, 'id': card.id}}
+                   'card': {'number': card.beautiful_number(), 'title': card.title,
+                            'bank_account': card_ba.beautiful_iban(), 'ba_title': card_ba.title, 'color': card.color,
+                            'payment_system': card.payment_system, 'expiry_date': card.expiry_date, 'id': card.id,
+                            'cardholder': f'{card.cardholder_surname} {card.cardholder_name}', 'cvv': card.cvv}}
         return render(request, 'card_page.html', context)
     else:
         request.session['error'] = 'Ви не є власником цієї картки!'
@@ -289,15 +369,17 @@ def ba_page(request, ba_id):
         outcome_transactions = Transaction.objects.all().filter(sender_bank_account=ba.iban, showing_to_sender=True)
         transactions = []
         for income_transaction in income_transactions:
-            transactions.append([income_transaction.time, income_transaction.short_comment(), income_transaction.receiver_money, 'income', income_transaction.id])
+            transactions.append([income_transaction.time, income_transaction.short_comment(),
+                                 income_transaction.receiver_money, 'income', income_transaction.id])
         for outcome_transaction in outcome_transactions:
-            transactions.append([outcome_transaction.time, outcome_transaction.short_comment(), outcome_transaction.sender_money, 'outcome', outcome_transaction.id])
+            transactions.append([outcome_transaction.time, outcome_transaction.short_comment(),
+                                 outcome_transaction.sender_money, 'outcome', outcome_transaction.id])
 
         transactions.sort(key=sort_transactions, reverse=True)
 
         context = {'error': error, 'success': success, 'transactions': transactions,
-                   'ba': {'iban': ba.beautiful_iban(), 'title': ba.title, 'balance': ba.balance, 'currency': ba.currency,
-                          'full_name': f'{ba.surname} {ba.name} {ba.patronymic}', 'id': ba_id}}
+                   'ba': {'iban': ba.beautiful_iban(), 'title': ba.title, 'balance': ba.balance, 'id': ba_id,
+                          'full_name': f'{ba.surname} {ba.name} {ba.patronymic}', 'currency': ba.currency}}
         return render(request, 'ba_page.html', context)
     else:
         request.session['error'] = 'Ви не є власником цього рахунку!'
@@ -518,6 +600,12 @@ def transfer_money(request, card_id):
                 del request.session['comment']
                 request.session['success'] = 'Кошти успішно знято'
                 return HttpResponseRedirect('/cards/' + str(card.id))
+            elif 'number' in request.POST.keys():
+                try:
+                    card = Card.objects.get(card_number=request.POST['number'])
+                    return HttpResponse(card.payment_system)
+                except Card.DoesNotExist:
+                    return HttpResponse()
             else:
                 try:
                     recipient_card = Card.objects.get(card_number=request.POST['recipient_card'].replace(' ', ''))
@@ -625,12 +713,13 @@ def exchange_rate(request):
     except KeyError:
         success = None
 
-    return render(request, 'exchange_rate.html', {'rate': round(er[currency], 3), 'date': date, 'error': error, 'success': success,
-                                                  'form': form,
+    return render(request, 'exchange_rate.html', {'rate': round(er[currency], 3), 'date': date, 'error': error,
+                                                  'form': form, 'success': success,
                                                   'date_input': {'value': date.strftime('%Y-%m-%d'),
-                                                                 'min': datetime.date(year=current_date.year-4,
-                                                                                      month=current_date.month,
-                                                                                      day=current_date.day).strftime('%Y-%m-%d'),
+                                                                 'min': datetime.date(
+                                                                     year=current_date.year-4,
+                                                                     month=current_date.month,
+                                                                     day=current_date.day).strftime('%Y-%m-%d'),
                                                                  'max': current_date.strftime('%Y-%m-%d')}})
 
 
@@ -657,7 +746,8 @@ def period_exchange_rate(request):
 
             date += datetime.timedelta(days=1)
 
-        return JsonResponse({'date': current_date.strftime('%Y-%m-%d'), 'ers': ers, 'currencyDropdown': form.render(form.template_name_p)
+        return JsonResponse({'date': current_date.strftime('%Y-%m-%d'), 'ers': ers,
+                             'currencyDropdown': form.render(form.template_name_p)
                             .replace('<label for="id_currency">Currency:</label>', '')
                             .replace('this.parentNode.submit()', f"changeRate('period', this.value)")})
     else:
@@ -751,15 +841,133 @@ def all_transactions(request):
 
 @login_required(redirect_field_name=None)
 def settings(request):
-    user = User.objects.get(email=request.user.email)
+    user = request.user
     if request.method == 'POST':
-        if request.POST['type'] == 'account':
+        context = {}
+        if request.POST['type'] == 'personal_info':
             user.first_name = request.POST['name']
             user.last_name = request.POST['lastname']
             user.patronymic = request.POST['patronymic']
             user.save()
-        context = {}
+            context = {'success': 'ПІБ успішно змінено'}
+
+        elif request.POST['type'] == 'change_password':
+            if check_password(request.POST['current_password'], user.password):
+                if request.POST['new_password1'] == request.POST['new_password2']:
+                    if request.POST['new_password1'] and request.POST['new_password2'] and request.POST['current_password']:
+                        user.set_password(request.POST['new_password1'])
+                        update_session_auth_hash(request, request.user)
+                        user.save()
+                        context = {'success': 'Пароль успішно змінено'}
+                    else:
+                        return render(request, 'reset_password.html', {'error': 'Пароль має мати хоч один символ!'})
+                else:
+                    context = {'error': 'Нові паролі не збігаються!'}
+            else:
+                context = {'error': 'Неправильний пароль!'}
+
+        elif request.POST['type'] == 'reset_password':
+            password_reset_code = __generate_code(6)
+
+            user.password_reset_code = make_password(password_reset_code)
+            user.password_reset_request_time = datetime.datetime.now()
+            user.save()
+
+            __send_email(user.email, 'reset_password',
+                         {'link':
+                             f'https://ibank-gh.herokuapp.com/reset_password/{request.user.id}/{password_reset_code}'},
+                         'Скидання пароля')
+            return HttpResponse(True)
+
+        elif request.POST['type'] == '2_step_login':
+            if request.POST['value'] == 'true':
+                value = True
+            else:
+                value = False
+
+            user.two_step_login = value
+            user.save()
+
+            return HttpResponse()
+
     else:
         context = {}
-    context.update({'name': user.first_name, 'last_name': user.last_name, 'patronymic': user.patronymic, 'phone': user.phone_number})
+    context.update({'name': user.first_name, 'last_name': user.last_name, 'patronymic': user.patronymic,
+                    'phone': user.phone_number, '2_step_login': user.two_step_login})
     return render(request, 'settings.html', context)
+
+
+def email_verification(request, user_id, verification_code):
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        raise Http404
+
+    if not user.is_active and user.date_joined < (datetime.datetime.now() - datetime.timedelta(days=1))\
+            .astimezone(user.date_joined.tzinfo):
+        user.delete()
+
+    elif not user.is_active and check_password(verification_code, user.verification_code):
+        user.is_active = True
+        user.verification_code = None
+        user.save()
+        return render(request, 'email_verification_successful.html', {'email': user.email})
+
+    raise Http404
+
+
+def email_verification_with_code(request):
+    if request.method == 'POST':
+        try:
+            user = User.objects.get(id=request.POST['user_id'])
+        except User.DoesNotExist:
+            return HttpResponse('user_does_not_exist')
+
+        if not user.is_active and user.date_joined < (datetime.datetime.now() - datetime.timedelta(days=1))\
+                .astimezone(user.date_joined.tzinfo):
+            user.delete()
+            return HttpResponse('code_has_expired')
+
+        elif not user.is_active and check_password(request.POST['verification_code'], user.verification_code):
+            user.is_active = True
+            user.verification_code = None
+            user.save()
+            return HttpResponse('verified')
+
+        elif user.is_active:
+            return HttpResponse('already_verified')
+
+        return HttpResponse('incorrect_code')
+    else:
+        raise Http404
+
+
+def reset_password(request, user_id, code):
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        raise Http404
+    if user.password_reset_request_time:
+        if user.password_reset_request_time < (datetime.datetime.now() - datetime.timedelta(days=1)) \
+                .astimezone(user.date_joined.tzinfo):
+            user.password_reset_request_time = None
+            user.password_reset_code = None
+            user.save()
+
+        elif check_password(code, user.password_reset_code):
+            if request.method == 'POST':
+                if request.POST['password1'] == request.POST['password2']:
+                    if request.POST['password1'] and request.POST['password2']:
+                        user.set_password(request.POST['password1'])
+                        update_session_auth_hash(request, request.user)
+                        user.password_reset_request_time = None
+                        user.password_reset_code = None
+                        user.save()
+                        return HttpResponseRedirect('/')
+                    else:
+                        return render(request, 'reset_password.html', {'error': 'Пароль має мати хоч один символ!'})
+                else:
+                    return render(request, 'reset_password.html', {'error': 'Паролі не співпадають!'})
+            else:
+                return render(request, 'reset_password.html', {})
+    raise Http404

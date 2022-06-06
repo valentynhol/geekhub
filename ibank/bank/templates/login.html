@@ -24,11 +24,12 @@
                 border-radius: 7px;
             }
 
-            [name=email], [name=password]{
+            [name=email]{
                 border: 1px solid grey;
                 border-radius: 7px;
                 height: 40px;
                 padding: 8px;
+                width: 100%;
             }
 
             .alert{
@@ -48,28 +49,90 @@
 
             body{
                 height: 100vh;
-                display:flex;
-                justify-content:center;
-                align-items:center;
+                display: flex;
+                align-items: center;
+            }
+
+            .password-container input {
+                border: 1px solid grey;
+                border-radius: 7px;
+                height: 40px;
+                padding: 8px;
+                flex: 1 1 auto;
+            }
+
+            form {
+                width: 95%;
+                max-width: 300px;
+            }
+
+            #signupLink::before{
+                content: '';
+                background-color: #000;
+                transition: 0.3s ease-in-out;
+                position: absolute;
+                left: 0;
+                bottom: 0;
+                width: 100%;
+                height: 2px;
+                z-index: -1;
+            }
+
+            #signupLink {
+                text-decoration: none;
+                transition: 0.3s ease-in-out;
+                color: #212529;
+                position: relative;
+                display: inline-block;
+            }
+
+            #signupLink:hover{
+                color: #f8f9fa;
+                cursor: pointer;
+            }
+
+            #signupLink:hover::before{
+                height: 100%;
             }
         </style>
     </head>
     <body>
-        <div>
-            <form action="" method="post" class="text-center">
+        <div class="m-auto py-4">
+            <form action="" method="post" class="text-center m-auto">
             {% csrf_token %}
                 <h1 class="text-dark">Вхід:</h1>
-                {{ form.email }}<br>
-                {{ form.password }}<br>
+                {{ form.email }}
+                <div class="input-group row row-cols-2 flex-nowrap mb-2 m-0 password-container">
+                    {{ form.password }}
+                    <button class="btn btn-outline-dark col-auto" type="button" onclick="showPassword('password', this.id)" id="passwordBtn"><i class="bi-eye-fill"></i></button>
+                </div>
+
                 <input type="submit" value="Вхід" style="height: 40px" class="btn btn-dark mt-3 shadow">
             </form>
-            <div class="text-center pt-5">У мене немає акаунту, <a href="/signup">створити</a></div>
+
+            <div class="text-center pt-5">У мене немає акаунту, <a href="/signup" id="signupLink"><strong class="m-1">створити</strong></a></div>
 
             {% if error %}
-                <div class="alert alert-danger m-auto"><i class="bi bi-exclamation-triangle-fill" role="img"></i>{{ error }}</div>
+                <div class="alert alert-danger m-auto mt-4"><i class="bi bi-exclamation-triangle-fill"></i>{{ error }}</div>
             {% endif %}
         </div>
+
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
 
+        <script>
+            function showPassword(inputId, buttonId){
+                document.getElementById(inputId).setAttribute('type', 'text');
+                let btn = document.getElementById(buttonId);
+                btn.setAttribute('onclick', 'hidePassword("' + inputId + '", this.id)');
+                btn.innerHTML = '<i class="bi-eye-slash-fill"></i>';
+            }
+
+            function hidePassword(inputId, buttonId){
+                document.getElementById(inputId).setAttribute('type', 'password');
+                let btn = document.getElementById(buttonId);
+                btn.setAttribute('onclick', 'showPassword("' + inputId + '", this.id)');
+                btn.innerHTML = '<i class="bi-eye-fill"></i>';
+            }
+        </script>
     </body>
 </html>

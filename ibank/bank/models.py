@@ -1,5 +1,4 @@
 from django.db import models
-from django.core.mail import send_mail
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.utils.translation import gettext_lazy as _
@@ -13,8 +12,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(_("ім'я"), max_length=30, blank=True)
     last_name = models.CharField(_('прізвище'), max_length=30, blank=True)
     patronymic = models.CharField(_('по-батькові'), max_length=30, blank=True)
-    date_joined = models.DateTimeField(_('дата приєднання'), auto_now_add=True, editable=True)
+    date_joined = models.DateTimeField(_('дата і час приєднання'), auto_now_add=True, editable=True)
     is_staff = models.BooleanField(_('суперкористувач'), default=False)
+    is_active = models.BooleanField(_('активний'), default=True)
+    verification_code = models.CharField(_('код підтвердження електронної адреси'), null=True, default=None, max_length=128, blank=True)
+    password_reset_code = models.CharField(_('код скидання паролю'), null=True, default=None, max_length=128, blank=True)
+    password_reset_request_time = models.DateTimeField(_('дата і час запиту на скидання паролю'), null=True,
+                                                       editable=True, blank=True)
+    two_step_login = models.BooleanField(_('двоетапний вхід'), default=False)
+    second_step_code = models.CharField(_('код підтвердження входу'), null=True, default=None, max_length=128, blank=True)
 
     objects = UserManager()
 
@@ -25,14 +31,11 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name = _('user')
         verbose_name_plural = _('users')
 
-    def email_user(self, subject, message, from_email=None, **kwargs):
-        send_mail(subject, message, from_email, [self.email], **kwargs)
-
 
 class Card(models.Model):
     title = models.CharField(_('назва картки'), max_length=100, default='Картка')
     bank_account = models.BigIntegerField(_('банківський рахунок'), null=True)
-    card_number = models.CharField(_('номер картки'), max_length=19, unique=True)
+    card_number = models.CharField(_('номер картки'), max_length=16, unique=True)
     expiry_date = models.CharField(_('термін дії'), max_length=5)
     payment_system = models.CharField(_('платіжна система'), choices=[('visa', 'Visa'), ('mastercard', 'Mastercard')],
                                       max_length=10)

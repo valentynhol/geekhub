@@ -11,7 +11,9 @@ class UserAdmin(BaseUserAdmin):
         (_('Permissions'), {
             'fields': ('is_staff', 'is_superuser', 'groups', 'user_permissions'),
         }),
-        (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
+        (_('Important dates'), {'fields': ('last_login', 'date_joined', 'password_reset_request_time')}),
+        (_('Перевірка'), {'fields': ('is_active', 'verification_code', 'password_reset_code')}),
+        (_('Інші'), {'fields': ('two_step_login', 'second_step_code')}),
     )
     add_fieldsets = (
         (None, {

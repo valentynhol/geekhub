@@ -2,10 +2,11 @@ from django import forms
 
 
 class LogInForm(forms.Form):
-    email = forms.CharField(widget=forms.EmailInput(attrs={'class': 'shadow m-1',
+    email = forms.CharField(widget=forms.EmailInput(attrs={'class': 'shadow mb-2',
                                                            'placeholder': "Електронна адреса"}))
-    password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'shadow m-1',
-                                                                 'placeholder': 'Пароль'}))
+    password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'shadow',
+                                                                 'placeholder': 'Пароль',
+                                                                 'id': 'password'}))
 
 
 class SignUpForm(forms.Form):
@@ -27,9 +28,11 @@ class SignUpForm(forms.Form):
                                                                'placeholder': "По-батькові"}),
                                  max_length=30,
                                  required=True)
-    password1 = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'shadow m-1', 'placeholder': 'Пароль'}))
-    password2 = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'shadow m-1',
-                                                                  'placeholder': 'Повторіть пароль'}))
+    password1 = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'shadow', 'placeholder': 'Пароль',
+                                                                  'id': 'password1'}))
+    password2 = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'shadow',
+                                                                  'placeholder': 'Повторіть пароль',
+                                                                  'id': 'password2'}))
 
 
 class CardForm(forms.Form):

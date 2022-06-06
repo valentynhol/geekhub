@@ -13,7 +13,7 @@
                 border-radius: 7px;
             }
 
-            [name=recipient_card], [name=comment]{
+            [name=comment]{
                 border: 1px solid grey;
                 border-radius: 7px;
                 height: 40px;
@@ -26,13 +26,39 @@
                 max-width: 450px;
                 width: 50%;
             }
+
+            .password-container input {
+                border: 1px solid grey;
+                border-radius: 7px;
+                height: 40px;
+                padding: 8px;
+                flex: 1 1 auto;
+            }
+
+            .password-container {
+                width: 100%;
+            }
+
+            #paymentSystem {
+                width: max-content;
+                border-bottom-right-radius: 7px;
+                border-top-right-radius: 7px;
+                height: 40px;
+                width: 40px;
+                padding: 0;
+            }
+
 {% endblock %}
 
 {% block page %}
 <h1 class="text-center">Переказати кошти з картки {{ card_title }}</h1>
 <form action="" method="post" class="mx-auto">
     {% csrf_token %}
-    <input type="text" name="recipient_card" placeholder="Номер картки">
+    <div class="input-group row row-cols-2 flex-nowrap mb-2 m-0 password-container">
+        <input type="text" name="recipient_card" placeholder="Номер картки" oninput="checkCard(this)">
+        <div class="alert-danger ms-0 d-flex flex-shrink-0" id="paymentSystem"><i class="bi-x m-auto" style="font-size: 1.75rem"></i></div>
+    </div>
+
     <textarea name="comment" placeholder="Коментар" style="height: 200px; resize: none" maxlength="100" class="mt-1"></textarea>
     <h3>Сума: <label for="money-range" id="money">{{ step }}</label></h3>
     <div class="row">
@@ -41,11 +67,54 @@
         <a type="button" class="btn col col-auto" onclick="money('+')"><i class="bi-chevron-right"></i></a>
     </div>
 
-    <a href="../{{ card_id }}" style="height: 40px; float: left" class="btn btn-secondary mt-3 shadow ms-1">Скасувати</a><input type="submit" value="Переказати" style="height: 40px; float: right" class="btn btn-success mt-3 shadow">
+    <a href="../{{ card_id }}" style="height: 40px; float: left" class="btn btn-secondary mt-3 shadow ms-1">Скасувати</a><input type="submit" value="Переказати" style="height: 40px; float: right" class="btn btn-success mt-3 shadow" id="submitBtn" disabled>
 </form>
 {% endblock %}
 {% block script %}
+{% load static %}
 <script>
+    function checkCard(numberInput) {
+        let number = numberInput.value.replace(/\s/g, '');
+        let paymentSystem = document.getElementById('paymentSystem');
+        let submitBtn = document.getElementById('submitBtn');
+
+        if (number.length === 16 && /^\d+$/.test(number)){
+            paymentSystem.innerHTML = "<div class='spinner-border m-auto' style='width: 1.75rem; height: 1.75rem'></div>";
+            paymentSystem.className = 'alert-secondary ms-0 d-flex flex-shrink-0';
+            submitBtn.setAttribute('disabled', '');
+
+            $.ajax({
+                url: '',
+
+                data: {
+                    'number': number,
+                },
+
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+
+                method: 'POST'
+            }).done(function (data, textStatus, jqXHR) {
+                let response = jqXHR.responseText;
+
+                if (response){
+                    paymentSystem.innerHTML = "<img src='{% static 'images/cards/payment_system/' %}" + response + ".png' class='m-auto' style='width: 1.75rem'>";
+                    paymentSystem.className = 'alert-success ms-0 d-flex flex-shrink-0';
+                    submitBtn.removeAttribute('disabled');
+                } else {
+                    paymentSystem.innerHTML = "<i class='bi-x m-auto' style='font-size: 1.75rem'></i>";
+                    paymentSystem.className = 'alert-danger ms-0 d-flex flex-shrink-0';
+                    submitBtn.setAttribute('disabled', '');
+                }
+            })
+        } else {
+            paymentSystem.innerHTML = "<i class='bi-x m-auto' style='font-size: 1.75rem'></i>";
+            paymentSystem.className = 'alert-danger ms-0 d-flex flex-shrink-0';
+            submitBtn.setAttribute('disabled', '');
+        }
+    }
+
     function money(operation){
         if (operation === '+'){
             document.getElementById('money-range').value = parseInt(document.getElementById('money-range').value) + {{ step }};

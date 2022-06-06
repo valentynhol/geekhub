@@ -1,4 +1,4 @@
-from django.urls import path, include
+from django.urls import path
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from . import views
 
@@ -6,11 +6,15 @@ from . import views
 app_name = 'bank'
 urlpatterns = [
     path('', views.home, name='home'),
+    path('settings/', views.settings, name='settings'),
+
+    # Verification
+    path('email_verification/', views.email_verification_with_code, name='email-verification-with-code'),
+    path('email_verification/<int:user_id>/<str:verification_code>', views.email_verification, name='email-verification'),
+
+    # Exchange rate
     path('exchange_rate/', views.exchange_rate, name='exchange-rate'),
     path('period_exchange_rate/', views.period_exchange_rate, name='period-er'),
-    path('settings/', views.settings, name='settings'),
-    #path('history/', views.history, name='history'),
-
 
     # Transactions
     path('transactions/<int:transaction_id>', views.transaction_page, name='transaction-page'),
@@ -20,6 +24,7 @@ urlpatterns = [
     path('login/', views.user_login, name='login'),
     path('logout/', views.user_logout, name='logout'),
     path('signup/', views.user_signup, name='signup'),
+    path('reset_password/<int:user_id>/<str:code>', views.reset_password, name='reset-password'),
 
     # Bank accounts
     path('bank_accounts/create', views.create_ba, name='create-bank-account'),
