@@ -9,17 +9,17 @@
 {% endblock %}
 
 {% block page %}
-    <h1>{{ ba.title }}</h1>
-    <p>Власник рахунку: {{ ba.full_name }}</p>
-    <p>IBAN: {{ ba.iban }}</p>
-    <p>Валюта: {{ ba.currency }}</p>
-    <p>Баланс: {{ ba.balance }}</p>
+    <h1 style="word-wrap: anywhere">{{ ba.title }}</h1>
+    <p><strong>Власник рахунку:</strong> {{ ba.full_name }}</p>
+    <p><strong>IBAN:</strong> {{ ba.iban }}</p>
+    <p><strong>Валюта:</strong> {{ ba.currency }}</p>
+    <p><strong>Баланс:</strong> {{ ba.balance }}</p>
     <div class="row">
-        <a href="add_money/{{ ba.id }}" class="btn btn-success col col-auto mx-2">Додати кошти</a>
+        <a href="add_money/{{ ba.id }}" class="btn btn-success col col-auto m-1">Додати кошти</a>
         {% if ba.balance >= 50 %}
-        <a href="withdraw_money/{{ ba.id }}" class="btn btn-danger col col-auto mx-2">Зняти кошти</a>
+        <a href="withdraw_money/{{ ba.id }}" class="btn btn-danger col col-auto m-1">Зняти кошти</a>
         {% endif %}
-        <a href="edit/{{ ba.id }}" class="btn btn-primary col col-auto mx-2">Змінити</a>
+        <a href="edit/{{ ba.id }}" class="btn btn-primary col col-auto m-1">Змінити</a>
     </div>
 
     <h1 class="mt-5 border-bottom">Транзакції</h1>

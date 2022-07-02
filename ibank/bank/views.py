@@ -1,6 +1,9 @@
 import decimal
 import random
 import datetime
+
+import hashlib
+import pytz
 import requests
 
 from django.shortcuts import render
@@ -15,6 +18,31 @@ from django.contrib.auth import update_session_auth_hash
 
 from .forms import LogInForm, SignUpForm, CardForm, BankAccountForm, ExchangeRateForm
 from .models import Card, BankAccount, User, ExchangeRate, Transaction
+
+
+def __confirm_operation(request):
+    user = request.user
+    if user.confirm_operations:
+        context = {}
+        if not user.last_operation_confirmation_time or \
+                (datetime.datetime.now().astimezone(user.last_operation_confirmation_time.tzinfo) - user.last_operation_confirmation_time).total_seconds() > int(user.confirm_operations):
+
+            if request.method == 'POST':
+                if 'confirmation' in request.POST.keys():
+                    if check_password(request.POST['password'], user.password):
+                        user.last_operation_confirmation_time = datetime.datetime.now(pytz.UTC)
+                        user.save()
+                        return 'confirmed'
+                    else:
+                        context = {'error': 'Неправильний пароль!'}
+                else:
+                    return 'confirmed'
+
+            return render(request, 'confirm_operation.html', context)
+        else:
+            return 'confirmed'
+    else:
+        return 'confirmed'
 
 
 def __send_email(email, file, context, title):
@@ -69,9 +97,13 @@ def __generate_iban(ba_type):
     return iban
 
 
-def __generate_code(length):
-    return ''.join([random.choice('1 2 3 4 5 6 7 8 9 0 A B C D E F G H I G '
-                                  'K L M N O P Q R S T U V W X Y Z'.split(' ')) for _ in range(length)])
+def __generate_code(length, uppercase=False):
+    symbol_list = '1 2 3 4 5 6 7 8 9 0 A B C D E F G H I G K L M N O P Q R S T U V W X Y Z'.split(' ')
+
+    if not uppercase:
+        symbol_list.append('a b c d e f g h i j k l m n o p q r s t u v w x y z')
+
+    return ''.join([random.choice(symbol_list) for _ in range(length)])
 
 
 def user_signup(request):
@@ -83,9 +115,9 @@ def user_signup(request):
         if request.POST['password1'] == request.POST['password2']:
             try:
                 user = User.objects.get(email=request.POST['email'])
-                if not user.is_active and user.date_joined < (datetime.datetime.now() - datetime.timedelta(days=1))\
-                        .astimezone(user.date_joined.tzinfo):
+                if not user.is_active and (datetime.datetime.now().astimezone(user.date_joined.tzinfo) - user.date_joined).total_seconds() > 86400:
                     user.delete()
+
             except User.DoesNotExist:
                 pass
 
@@ -98,7 +130,7 @@ def user_signup(request):
                                                 phone_number=request.POST['phone_number'],
                                                 is_active=False)
                 if user:
-                    verification_code = __generate_code(6)
+                    verification_code = __generate_code(6, True)
                     user.verification_code = make_password(verification_code)
                     user.save()
                     __send_email(user.email, 'email_verification',
@@ -150,8 +182,7 @@ def user_login(request):
             try:
                 user = User.objects.get(email=request.POST['email'])
                 if not user.is_active:
-                    if user.date_joined < (datetime.datetime.now() - datetime.timedelta(days=1))\
-                            .astimezone(user.date_joined.tzinfo):
+                    if (datetime.datetime.now().astimezone(user.date_joined.tzinfo) - user.date_joined).total_seconds() > 86400:
                         user.delete()
                         request.session['error'] = 'Неправильна електронна адреса або пароль!'
                     else:
@@ -163,7 +194,7 @@ def user_login(request):
 
                     if user_authenticated:
                         if user.two_step_login:
-                            code = __generate_code(6)
+                            code = __generate_code(6, True)
 
                             user.second_step_code = make_password(code)
                             user.save()
@@ -177,7 +208,7 @@ def user_login(request):
                     else:
                         request.session['error'] = 'Неправильна електронна адреса або пароль!'
             except User.DoesNotExist:
-                request.session['error'] = 'Неправильна електронна адреса!'
+                request.session['error'] = 'Неправильна електронна адреса або пароль!'
     else:
         form = LogInForm()
 
@@ -198,7 +229,7 @@ def user_logout(request):
 
 
 @login_required(redirect_field_name=None)
-def home(request):
+def cards_and_bank_accounts(request):
     user = request.user
 
     raw_cards = Card.objects.all().filter(cardholder_email=user.email)
@@ -229,15 +260,24 @@ def home(request):
 
 @login_required(redirect_field_name=None)
 def create_card(request):
+    confirm_operation = __confirm_operation(request)
+    if not confirm_operation == 'confirmed':
+        return confirm_operation
+
     user = request.user
-    if request.method == 'POST':
+    if request.method == 'POST' and 'confirmation' not in request.POST.keys():
         for i in range(60):
             try:
+                if len(request.POST['title']) <= 30:
+                    title = request.POST['title']
+                else:
+                    title = request.POST['title'][0:29]
+
                 card_number = __generate_card_num(request.POST['payment_system'])
                 expiry_date = datetime.date(year=datetime.date.today().year+3,
                                             month=datetime.date.today().month,
                                             day=datetime.date.today().day).strftime('%m/%y')
-                card = Card(title=request.POST['title'], color=request.POST['color'],
+                card = Card(title=title, color=request.POST['color'],
                             payment_system=request.POST['payment_system'],
                             card_number=card_number, cvv=''.join([str(random.randint(1, 9)) for _ in range(3)]),
                             bank_account=request.POST['bank_account'], expiry_date=expiry_date,
@@ -276,12 +316,21 @@ def create_card(request):
 
 @login_required(redirect_field_name=None)
 def create_ba(request):
+    confirm_operation = __confirm_operation(request)
+    if not confirm_operation == 'confirmed':
+        return confirm_operation
+
     user = request.user
-    if request.method == 'POST':
+    if request.method == 'POST' and 'confirmation' not in request.POST.keys():
         for i in range(60):
             try:
+                if len(request.POST['title']) <= 30:
+                    title = request.POST['title']
+                else:
+                    title = request.POST['title'][0:29]
+
                 iban = __generate_iban('checking')
-                ba = BankAccount(title=request.POST['title'], iban=iban, currency=request.POST['currency'], balance='0',
+                ba = BankAccount(title=title, iban=iban, currency=request.POST['currency'], balance='0',
                                  name=user.first_name, surname=user.last_name, patronymic=user.patronymic,
                                  email=user.email)
                 ba.save()
@@ -309,6 +358,10 @@ def create_ba(request):
 
 @login_required(redirect_field_name=None)
 def card_page(request, card_id):
+    confirm_operation = __confirm_operation(request)
+    if not confirm_operation == 'confirmed':
+        return confirm_operation
+
     user = request.user
     try:
         card = Card.objects.get(id=card_id)
@@ -334,7 +387,8 @@ def card_page(request, card_id):
                    'card': {'number': card.beautiful_number(), 'title': card.title,
                             'bank_account': card_ba.beautiful_iban(), 'ba_title': card_ba.title, 'color': card.color,
                             'payment_system': card.payment_system, 'expiry_date': card.expiry_date, 'id': card.id,
-                            'cardholder': f'{card.cardholder_surname} {card.cardholder_name}', 'cvv': card.cvv}}
+                            'cardholder': f'{card.cardholder_surname} {card.cardholder_name}', 'cvv': card.cvv,
+                            'currency': card_ba.currency}}
         return render(request, 'card_page.html', context)
     else:
         request.session['error'] = 'Ви не є власником цієї картки!'
@@ -345,6 +399,10 @@ def card_page(request, card_id):
 def ba_page(request, ba_id):
     def sort_transactions(element):
         return element[0]
+
+    confirm_operation = __confirm_operation(request)
+    if not confirm_operation == 'confirmed':
+        return confirm_operation
 
     user = request.user
     try:
@@ -388,6 +446,10 @@ def ba_page(request, ba_id):
 
 @login_required(redirect_field_name=None)
 def edit_card(request, card_id):
+    confirm_operation = __confirm_operation(request)
+    if not confirm_operation == 'confirmed':
+        return confirm_operation
+
     user = request.user
     try:
         card = Card.objects.get(id=card_id)
@@ -396,12 +458,20 @@ def edit_card(request, card_id):
         return HttpResponseRedirect('/')
 
     if user.email == card.cardholder_email:
-        if request.method == 'POST':
-            card.title = request.POST['title']
-            card.color = request.POST['color']
-            card.save()
+        if request.method == 'POST' and 'confirmation' not in request.POST.keys():
+            if len(request.POST['title']) <= 30:
+                title = request.POST['title']
+            else:
+                title = request.POST['title'][0:29]
 
-            request.session['success'] = 'Картку успішно змінено'
+            if title.replace(' ', ''):
+                card.title = title
+                card.color = request.POST['color']
+                card.save()
+
+                request.session['success'] = 'Картку успішно змінено'
+            else:
+                request.session['error'] = 'Назва має містити символи крім пробілів'
             return HttpResponseRedirect('/cards/'+str(card_id))
         else:
             form = CardForm(initial={'color': card.color, 'title': card.title})
@@ -472,6 +542,10 @@ def add_money(request, ba_id):
 
 @login_required(redirect_field_name=None)
 def withdraw_money(request, ba_id):
+    confirm_operation = __confirm_operation(request)
+    if not confirm_operation == 'confirmed':
+        return confirm_operation
+
     user = request.user
     try:
         ba = BankAccount.objects.get(id=ba_id)
@@ -484,7 +558,7 @@ def withdraw_money(request, ba_id):
         return HttpResponseRedirect('/bank_accounts/' + str(ba_id))
 
     if user.email == ba.email:
-        if request.method == 'POST':
+        if request.method == 'POST' and 'confirmation' not in request.POST.keys():
             try:
                 if int(request.POST['money']) < 0:
                     request.session['error'] = "Введена сума має бути додатньою!"
@@ -522,6 +596,10 @@ def withdraw_money(request, ba_id):
 
 @login_required(redirect_field_name=None)
 def edit_ba(request, ba_id):
+    confirm_operation = __confirm_operation(request)
+    if not confirm_operation == 'confirmed':
+        return confirm_operation
+
     user = request.user
     try:
         ba = BankAccount.objects.get(id=ba_id)
@@ -530,11 +608,19 @@ def edit_ba(request, ba_id):
         return HttpResponseRedirect('/')
 
     if user.email == ba.email:
-        if request.method == 'POST':
-            ba.title = request.POST['title']
-            ba.save()
+        if request.method == 'POST' and 'confirmation' not in request.POST.keys():
+            if len(request.POST['title']) <= 30:
+                title = request.POST['title']
+            else:
+                title = request.POST['title'][0:29]
 
-            request.session['success'] = 'Картку успішно змінено'
+            if title.replace(' ', ''):
+                ba.title = title
+                ba.save()
+
+                request.session['success'] = 'Банківський рахунок успішно змінено'
+            else:
+                request.session['error'] = 'Назва має містити символи крім пробілів'
             return HttpResponseRedirect('/bank_accounts/'+str(ba_id))
         else:
             form = CardForm(initial={'title': ba.title})
@@ -560,6 +646,10 @@ def edit_ba(request, ba_id):
 
 @login_required(redirect_field_name=None)
 def transfer_money(request, card_id):
+    confirm_operation = __confirm_operation(request)
+    if not confirm_operation == 'confirmed':
+        return confirm_operation
+
     user = request.user
     try:
         card = Card.objects.get(id=card_id)
@@ -574,7 +664,7 @@ def transfer_money(request, card_id):
         return HttpResponseRedirect('/cards/' + str(card_id))
 
     if user.email == card.cardholder_email:
-        if request.method == 'POST':
+        if request.method == 'POST' and 'confirmation' not in request.POST.keys():
             if 'confirm' in request.POST.keys():
                 try:
                     recipient_ba = BankAccount.objects.get(id=request.session['recipient_ba'])
@@ -670,8 +760,7 @@ def transfer_money(request, card_id):
             except KeyError:
                 success = None
             context = {'error': error, 'success': success, 'card_title': card.title, 'card_id': card_id,
-                       'max_money': int(ba.balance - (ba.balance % 1)),
-                       'step': 10}
+                       'max_money': int(ba.balance - (ba.balance % 10)), 'card_currency': ba.currency}
             return render(request, 'transfer_money.html', context)
     else:
         request.session['error'] = 'Ви не є власником цього рахунку!'
@@ -756,6 +845,10 @@ def period_exchange_rate(request):
 
 @login_required(redirect_field_name=None)
 def transaction_page(request, transaction_id):
+    confirm_operation = __confirm_operation(request)
+    if not confirm_operation == 'confirmed':
+        return confirm_operation
+
     user = request.user
     try:
         transaction = Transaction.objects.get(id=transaction_id)
@@ -802,6 +895,10 @@ def all_transactions(request):
     def sort_transactions(element):
         return element['time']
 
+    confirm_operation = __confirm_operation(request)
+    if not confirm_operation == 'confirmed':
+        return confirm_operation
+
     user = request.user
 
     bas = BankAccount.objects.all().filter(email=user.email)
@@ -841,6 +938,10 @@ def all_transactions(request):
 
 @login_required(redirect_field_name=None)
 def settings(request):
+    confirm_operation = __confirm_operation(request)
+    if not confirm_operation == 'confirmed':
+        return confirm_operation
+
     user = request.user
     if request.method == 'POST':
         context = {}
@@ -866,19 +967,6 @@ def settings(request):
             else:
                 context = {'error': 'Неправильний пароль!'}
 
-        elif request.POST['type'] == 'reset_password':
-            password_reset_code = __generate_code(6)
-
-            user.password_reset_code = make_password(password_reset_code)
-            user.password_reset_request_time = datetime.datetime.now()
-            user.save()
-
-            __send_email(user.email, 'reset_password',
-                         {'link':
-                             f'https://ibank-gh.herokuapp.com/reset_password/{request.user.id}/{password_reset_code}'},
-                         'Скидання пароля')
-            return HttpResponse(True)
-
         elif request.POST['type'] == '2_step_login':
             if request.POST['value'] == 'true':
                 value = True
@@ -890,10 +978,37 @@ def settings(request):
 
             return HttpResponse()
 
+        elif request.POST['type'] == 'confirm_operations':
+            if request.POST['value'] in ['0', '30', '60', '120', '300', '600', '']:
+                user.confirm_operations = request.POST['value']
+                user.save()
+
+            return HttpResponse()
+
+        elif request.POST['type'] == 'set_custom_time':
+            if str(request.POST['minutes']).isdigit() and str(request.POST['seconds']).isdigit():
+                if int(request.POST['minutes']) >= 0 and int(request.POST['minutes']) >= 0:
+                    value = int(request.POST['minutes'])*60 + int(request.POST['seconds'])
+
+                    if 0 <= value <= 1800:
+                        user.confirm_operations = str(value)
+                        user.save()
+
+            context = {}
+
     else:
         context = {}
+
+    if user.confirm_operations not in ["0", "30", "60", "120", "300", "600", ""]:
+        confirm_operations_custom = str(int(user.confirm_operations) // 60) + 'хв ' + \
+                                    str(int(user.confirm_operations) % 60) + 'с'
+    else:
+        confirm_operations_custom = ''
+
     context.update({'name': user.first_name, 'last_name': user.last_name, 'patronymic': user.patronymic,
-                    'phone': user.phone_number, '2_step_login': user.two_step_login})
+                    '2_step_login': user.two_step_login, 'confirm_operations': user.confirm_operations,
+                    'confirm_operations_custom': confirm_operations_custom})
+
     return render(request, 'settings.html', context)
 
 
@@ -903,8 +1018,7 @@ def email_verification(request, user_id, verification_code):
     except User.DoesNotExist:
         raise Http404
 
-    if not user.is_active and user.date_joined < (datetime.datetime.now() - datetime.timedelta(days=1))\
-            .astimezone(user.date_joined.tzinfo):
+    if not user.is_active and (datetime.datetime.now().astimezone(user.date_joined.tzinfo) - user.date_joined).total_seconds() > 86400:
         user.delete()
 
     elif not user.is_active and check_password(verification_code, user.verification_code):
@@ -923,8 +1037,7 @@ def email_verification_with_code(request):
         except User.DoesNotExist:
             return HttpResponse('user_does_not_exist')
 
-        if not user.is_active and user.date_joined < (datetime.datetime.now() - datetime.timedelta(days=1))\
-                .astimezone(user.date_joined.tzinfo):
+        if not user.is_active and (datetime.datetime.now().astimezone(user.date_joined.tzinfo) - user.date_joined).total_seconds() > 86400:
             user.delete()
             return HttpResponse('code_has_expired')
 
@@ -942,19 +1055,45 @@ def email_verification_with_code(request):
         raise Http404
 
 
-def reset_password(request, user_id, code):
+def send_password_reset_email(request):
+    email_sent = False
+    error = None
+    if request.method == 'POST':
+        try:
+            user = User.objects.get(email=request.POST['email'])
+
+            password_reset_code = hashlib.sha256(bytes(user.email +
+                                                str(datetime.datetime.timestamp(datetime.datetime.now())) +
+                                                'adjwod', 'UTF-8')).hexdigest()
+
+            user.password_reset_code = password_reset_code
+            user.password_reset_request_time = datetime.datetime.now(pytz.UTC)
+            user.save()
+
+            __send_email(user.email, 'reset_password',
+                         {'link': f'https://ibank-gh.herokuapp.com/reset_password/{password_reset_code}'},
+                         'Скидання пароля')
+
+            email_sent = True
+
+        except User.DoesNotExist:
+            error = 'За цією електронною адресою не зареєстровано користувача.'
+
+    return render(request, 'send_password_reset_email.html', {'email_sent': email_sent, 'error': error})
+
+
+def reset_password(request, code):
     try:
-        user = User.objects.get(id=user_id)
+        user = User.objects.get(password_reset_code=code)
     except User.DoesNotExist:
         raise Http404
     if user.password_reset_request_time:
-        if user.password_reset_request_time < (datetime.datetime.now() - datetime.timedelta(days=1)) \
-                .astimezone(user.date_joined.tzinfo):
+        if (datetime.datetime.now().astimezone(user.password_reset_request_time.tzinfo) - user.password_reset_request_time).total_seconds() > 300:
             user.password_reset_request_time = None
             user.password_reset_code = None
             user.save()
 
-        elif check_password(code, user.password_reset_code):
+        elif code == user.password_reset_code:
             if request.method == 'POST':
                 if request.POST['password1'] == request.POST['password2']:
                     if request.POST['password1'] and request.POST['password2']:

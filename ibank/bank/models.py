@@ -17,10 +17,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(_('активний'), default=True)
     verification_code = models.CharField(_('код підтвердження електронної адреси'), null=True, default=None, max_length=128, blank=True)
     password_reset_code = models.CharField(_('код скидання паролю'), null=True, default=None, max_length=128, blank=True)
-    password_reset_request_time = models.DateTimeField(_('дата і час запиту на скидання паролю'), null=True,
-                                                       editable=True, blank=True)
+    password_reset_request_time = models.DateTimeField(_('дата і час запиту на скидання паролю'), null=True, editable=True, blank=True)
     two_step_login = models.BooleanField(_('двоетапний вхід'), default=False)
     second_step_code = models.CharField(_('код підтвердження входу'), null=True, default=None, max_length=128, blank=True)
+    confirm_operations = models.CharField(_('запитувати підтвердження важливих операцій'), max_length=4, default=120, null=False, blank=True)
+    last_operation_confirmation_time = models.DateTimeField(_('дата і час останнього підтвердження операції'), null=True, editable=True, blank=True)
 
     objects = UserManager()
 
@@ -33,7 +34,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 class Card(models.Model):
-    title = models.CharField(_('назва картки'), max_length=100, default='Картка')
+    title = models.CharField(_('назва картки'), max_length=30, default='Картка')
     bank_account = models.BigIntegerField(_('банківський рахунок'), null=True)
     card_number = models.CharField(_('номер картки'), max_length=16, unique=True)
     expiry_date = models.CharField(_('термін дії'), max_length=5)
@@ -43,10 +44,12 @@ class Card(models.Model):
     cardholder_name = models.CharField(_("ім'я власника картки"), max_length=30)
     cardholder_surname = models.CharField(_('прізвище власника картки'), max_length=30)
     cardholder_email = models.EmailField(_('електронна адреса власника картки'), null=True)
-    color = models.CharField(_('колір картки'), choices=[('blue', 'Cиній'), ('cyan', 'Бірюзовий'), ('green', 'Зелений'),
-                             ('grey', 'Сірий'), ('magenta', 'Пурпурний'), ('orange', 'Оранжевий'),
-                             ('purple', 'Фіолетовий'), ('red', 'Червоний'), ('yellow', 'Жовтий')], max_length=9,
-                             default='blue')
+    color = models.CharField(_('колір картки'), choices=[('cyan', 'Бірюзовий'), ('yellow', 'Жовтий'),
+                                                         ('green', 'Зелений'), ('orange', 'Помаранчевий'),
+                                                         ('magenta', 'Пурпурний'), ('blue', 'Cиній'),
+                                                         ('grey', 'Сірий'), ('purple', 'Фіолетовий'),
+                                                         ('red', 'Червоний')],
+                             max_length=9, default='blue')
 
     def __str__(self):
         return self.card_number
@@ -61,7 +64,7 @@ class Card(models.Model):
 
 
 class BankAccount(models.Model):
-    title = models.CharField(_("назва банківського рахунку"), max_length=100, default='Картка')
+    title = models.CharField(_("назва банківського рахунку"), max_length=30, default='Банківський рахунок')
     name = models.CharField(_("ім'я власника рахунку"), max_length=30)
     surname = models.CharField(_('прізвище власника рахунку'), max_length=30)
     patronymic = models.CharField(_('по-батькові власника рахунку'), max_length=30)

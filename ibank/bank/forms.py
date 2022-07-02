@@ -37,21 +37,23 @@ class SignUpForm(forms.Form):
 
 class CardForm(forms.Form):
     title = forms.CharField(widget=forms.TextInput(attrs={'class': 'shadow m-1',
-                                                          'placeholder': 'Назва картки'}))
+                                                          'placeholder': 'Назва картки',
+                                                          'maxlength': '30'}))
     bank_account = forms.ChoiceField(widget=forms.Select(attrs={'class': 'shadow m-1 dropdown dropdown-menu-dark'}),
                                      choices=[('', 'Виберіть рахунок')])
     color = forms.ChoiceField(widget=forms.Select(attrs={'class': 'shadow m-1 dropdown dropdown-menu-dark'}),
-                              choices=[('', 'Виберіть колір'), ('blue', 'Cиній'), ('cyan', 'Бірюзовий'),
-                                       ('green', 'Зелений'), ('grey', 'Сірий'), ('magenta', 'Пурпурний'),
-                                       ('orange', 'Оранжевий'), ('purple', 'Фіолетовий'), ('red', 'Червоний'),
-                                       ('yellow', 'Жовтий')])
+                              choices=[('', 'Виберіть колір'), ('cyan', 'Бірюзовий'), ('yellow', 'Жовтий'),
+                                       ('green', 'Зелений'), ('orange', 'Помаранчевий'), ('magenta', 'Пурпурний'),
+                                       ('blue', 'Cиній'), ('grey', 'Сірий'), ('purple', 'Фіолетовий'),
+                                       ('red', 'Червоний')])
     payment_system = forms.ChoiceField(widget=forms.Select(attrs={'class': 'shadow m-1 dropdown dropdown-menu-dark'}),
                                        choices=[('', 'Виберіть платіжну систему'), ('mastercard', 'Mastercard'), ('visa', 'Visa')])
 
 
 class BankAccountForm(forms.Form):
     title = forms.CharField(widget=forms.TextInput(attrs={'class': 'shadow my-1',
-                                                          'placeholder': 'Назва рахунку'}))
+                                                          'placeholder': 'Назва рахунку',
+                                                          'maxlength': '30'}))
 
     currency = forms.ChoiceField(widget=forms.Select(attrs={'class': 'dropdown dropdown-menu-dark my-1'}),
                                  choices=[('UAH', 'Українська гривня (UAH)'),

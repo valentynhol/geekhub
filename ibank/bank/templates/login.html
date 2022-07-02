@@ -66,7 +66,7 @@
                 max-width: 300px;
             }
 
-            #signupLink::before{
+            #signupLink::before, #passwordResetLink::before{
                 content: '';
                 background-color: #000;
                 transition: 0.3s ease-in-out;
@@ -78,7 +78,7 @@
                 z-index: -1;
             }
 
-            #signupLink {
+            #signupLink, #passwordResetLink{
                 text-decoration: none;
                 transition: 0.3s ease-in-out;
                 color: #212529;
@@ -86,12 +86,12 @@
                 display: inline-block;
             }
 
-            #signupLink:hover{
+            #signupLink:hover, #passwordResetLink:hover{
                 color: #f8f9fa;
                 cursor: pointer;
             }
 
-            #signupLink:hover::before{
+            #signupLink:hover::before, #passwordResetLink:hover::before{
                 height: 100%;
             }
         </style>
@@ -107,13 +107,14 @@
                     <button class="btn btn-outline-dark col-auto" type="button" onclick="showPassword('password', this.id)" id="passwordBtn"><i class="bi-eye-fill"></i></button>
                 </div>
 
-                <input type="submit" value="Вхід" style="height: 40px" class="btn btn-dark mt-3 shadow">
+                <input type="submit" value="Вхід" style="height: 40px" class="btn btn-outline-dark mt-3 shadow">
             </form>
 
             <div class="text-center pt-5">У мене немає акаунту, <a href="/signup" id="signupLink"><strong class="m-1">створити</strong></a></div>
+            <div class="text-center pt-1">Я не пам'ятаю пароль, <a href="/reset_password" id="passwordResetLink"><strong class="m-1">скинути</strong></a></div>
 
             {% if error %}
-                <div class="alert alert-danger m-auto mt-4"><i class="bi bi-exclamation-triangle-fill"></i>{{ error }}</div>
+                <div class="alert alert-danger m-auto mt-4 row"><i class="bi bi-exclamation-triangle-fill col-auto m-auto p-3" role="img"></i><p class="col m-0">{{ error }}</p></div>
             {% endif %}
         </div>
 

@@ -18,21 +18,21 @@
 <h1 class="text-center">Переказ коштів</h1>
 <div class="row row-cols-1 row-cols-md-2">
     <div class="col" id="recipient">
-        <h2>Отримувач:</h2>
+        <h2>Отримувач:</strong></h2>
         <p>{{ recipient.full_name }}</p>
-        <p>Картка: {{ recipient.card }}</p>
-        <p>Рахунок: {{ recipient.iban }}</p>
-        <h3 class="text-success col mt-3">Отримана сума: {{ receiver_money }}{{ recipient.currency }}</h3>
+        <p><strong>Картка:</strong> {{ recipient.card }}</p>
+        <p><strong>Рахунок:</strong> {{ recipient.iban }}</p>
+        <h3 class="text-success col mt-3"><strong>Отримана сума:</strong> {{ receiver_money }}{{ recipient.currency }}</h3>
     </div>
     <div class="col" id="sender">
         <h2>Відправник:</h2>
         <p>{{ sender.full_name }}</p>
-        <p>Картка: {{ sender.card }}</p>
-        <p>Рахунок: {{ sender.iban }}</p>
-        <h3 class="text-danger col mt-3">Відправлена сума: {{ sender_money }}{{ sender.currency }}</h3>
+        <p><strong>Картка:</strong> {{ sender.card }}</p>
+        <p><strong>Рахунок:</strong> {{ sender.iban }}</p>
+        <h3 class="text-danger col mt-3"><strong>Відправлена сума:</strong> {{ sender_money }}{{ sender.currency }}</h3>
     </div>
 </div>
-<h6 class="text-center mt-3">Коментар: {{ msg }}</h6>
+<p class="text-center mt-3" style="word-wrap: anywhere"><strong>Коментар:</strong> {{ msg }}</p>
 
 <form action="" method="post">
     {% csrf_token %}

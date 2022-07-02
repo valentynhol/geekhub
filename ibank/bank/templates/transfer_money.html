@@ -60,10 +60,10 @@
     </div>
 
     <textarea name="comment" placeholder="Коментар" style="height: 200px; resize: none" maxlength="100" class="mt-1"></textarea>
-    <h3>Сума: <label for="money-range" id="money">{{ step }}</label></h3>
+    <h3>Сума: <label for="money-range" id="money">10</label> {{ card_currency }}</h3>
     <div class="row">
         <a type="button" class="btn col col-auto" onclick="money('-')"><i class="bi-chevron-left"></i></a>
-        <input name="money" id="money-range" type="range" class="form-range col my-auto" min="{{ step }}" max="{{ max_money }}" step="{{ step }}" value="{{ step }}" oninput="getElementById('money').innerText = this.value">
+        <input name="money" id="money-range" type="range" class="form-range col my-auto" min="10" max="{{ max_money }}" step="10" value="10" oninput="getElementById('money').innerText = this.value">
         <a type="button" class="btn col col-auto" onclick="money('+')"><i class="bi-chevron-right"></i></a>
     </div>
 
@@ -116,11 +116,18 @@
     }
 
     function money(operation){
+        let money = parseInt(document.getElementById('money-range').value);
+
         if (operation === '+'){
-            document.getElementById('money-range').value = parseInt(document.getElementById('money-range').value) + {{ step }};
+            document.getElementById('money-range').value = money + 100 - money % 100;
         } else {
-            document.getElementById('money-range').value -= {{ step }};
+            if (money % 100) {
+                document.getElementById('money-range').value = money - (money % 100);
+            } else {
+                document.getElementById('money-range').value = money - 100;
+            }
         }
+
         document.getElementById('money').innerText = document.getElementById('money-range').value;
     }
 </script>

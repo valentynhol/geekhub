@@ -63,6 +63,10 @@
             .ba-balance{
                 margin: auto;
             }
+
+            .ba-title{
+                word-wrap: anywhere;
+            }
 {% endblock %}
 
 {% block page %}
@@ -97,7 +101,7 @@
                 {% for ba in bank_accounts %}
                     <div class="bank-account row row-cols-1 row-cols-md-2 py-2 mx-1 w-auto my-2">
                         <div class="col-md-8">
-                            <h3 class="ba-title">Назва: {{ ba.title }}</h3>
+                            <h3 class="ba-title">{{ ba.title }}</h3>
                             <p class="ba-iban">Iban: {{ ba.iban }}</p>
                             <p class="ba-currency">Валюта: {{ ba.currency }}</p>
                             <a class="stretched-link" href='../bank_accounts/{{ ba.id }}'></a>

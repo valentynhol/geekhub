@@ -97,6 +97,10 @@
                 cursor: pointer;
                 filter: drop-shadow(0 0 0.5rem #4a4a4a);
             }
+
+            select{
+                text-overflow: ellipsis;
+            }
             {% block style %}
             {% endblock %}
         </style>
@@ -136,9 +140,9 @@
             <div class="main mt-2 ms-2" style="padding-left: 4rem">
                 {% block alert %}
                     {% if error %}
-                        <div class="alert alert-danger"><i class="bi-exclamation-triangle-fill p-2" role="img"></i>{{ error }}</div>
+                        <div class="alert alert-danger m-auto mb-3 row"><i class="bi-exclamation-triangle-fill col-auto m-auto p-3" role="img"></i><p class="col m-auto">{{ error }}</p></div>
                     {% elif success %}
-                        <div class="alert alert-success"><i class="bi-check-circle-fill p-2" role="img"></i>{{ success }}</div>
+                        <div class="alert alert-success m-auto mb-3 row"><i class="bi-check-circle-fill col-auto m-auto p-3" role="img"></i><p class="col m-auto">{{ success }}</p></div>
                     {% endif %}
                 {% endblock %}
                 {% block page %}{% endblock %}

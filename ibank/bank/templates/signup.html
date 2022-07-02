@@ -95,7 +95,7 @@
     </head>
     <body>
         <div class="m-auto py-4">
-            <form action="" method="post" class="text-center">
+            <form action="" method="post" class="text-center m-auto">
             {% csrf_token %}
                 <h1 class="text-dark">Створення акаунту:</h1>
                 {{ form.first_name }}
@@ -114,13 +114,13 @@
                     <button class="btn btn-outline-dark col-auto" type="button" onclick="showPassword('password2', this.id)" id="password2btn"><i class="bi-eye-fill"></i></button>
                 </div>
 
-                <input type="submit" value="Створити" style="height: 40px" class="btn btn-dark mt-3 shadow">
+                <input type="submit" value="Створити" style="height: 40px" class="btn btn-outline-dark mt-3 shadow">
             </form>
 
             <div class="text-center mt-5">У мене вже є акаунт, <a href="/login" id="loginLink"><strong class="m-1">увійти</strong></a></div>
 
             {% if error %}
-                <div class="alert alert-danger m-auto mt-4"><i class="bi bi-exclamation-triangle-fill" role="img"></i>{{ error }}</div>
+                <div class="alert alert-danger m-auto mt-4 row"><i class="bi bi-exclamation-triangle-fill col-auto m-auto p-3" role="img"></i><p class="col m-0">{{ error }}</p></div>
             {% endif %}
         </div>
 
@@ -141,6 +141,5 @@
                 btn.innerHTML = '<i class="bi-eye-fill"></i>';
             }
         </script>
-
     </body>
 </html>

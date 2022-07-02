@@ -17,6 +17,7 @@ from django.contrib import admin
 from django.urls import include, path, re_path
 from django.conf import settings
 from django.views.static import serve
+from .views import page_not_found, server_error
 
 urlpatterns = [
     path('', include('bank.urls')),
@@ -29,3 +30,6 @@ if settings.DEBUG:
             'document_root': settings.MEDIA_ROOT,
         }),
     ]
+
+handler404 = page_not_found
+handler500 = server_error

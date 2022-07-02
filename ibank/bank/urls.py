@@ -5,7 +5,7 @@ from . import views
 
 app_name = 'bank'
 urlpatterns = [
-    path('', views.home, name='home'),
+    path('', views.cards_and_bank_accounts, name='cards-and-bank-accounts'),
     path('settings/', views.settings, name='settings'),
 
     # Verification
@@ -24,7 +24,8 @@ urlpatterns = [
     path('login/', views.user_login, name='login'),
     path('logout/', views.user_logout, name='logout'),
     path('signup/', views.user_signup, name='signup'),
-    path('reset_password/<int:user_id>/<str:code>', views.reset_password, name='reset-password'),
+    path('reset_password/', views.send_password_reset_email, name='send-password-reset-email'),
+    path('reset_password/<str:code>', views.reset_password, name='reset-password'),
 
     # Bank accounts
     path('bank_accounts/create', views.create_ba, name='create-bank-account'),
@@ -34,10 +35,10 @@ urlpatterns = [
     path('bank_accounts/withdraw_money/<int:ba_id>', views.withdraw_money, name='withdraw-money'),
 
     # Cards
-    path('cards/create', views.create_card, name='create card'),
-    path('cards/<int:card_id>', views.card_page, name='card page'),
-    path('cards/edit/<int:card_id>', views.edit_card, name='edit card'),
-    path('cards/transfer_money/<int:card_id>', views.transfer_money, name='transfer money'),
+    path('cards/create', views.create_card, name='create-card'),
+    path('cards/<int:card_id>', views.card_page, name='card-page'),
+    path('cards/edit/<int:card_id>', views.edit_card, name='edit-card'),
+    path('cards/transfer_money/<int:card_id>', views.transfer_money, name='transfer-money'),
 ]
 
 urlpatterns += staticfiles_urlpatterns()

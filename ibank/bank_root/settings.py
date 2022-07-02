@@ -92,7 +92,7 @@ INSTALLED_APPS = [
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'bank_root/templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
